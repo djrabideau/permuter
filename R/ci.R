@@ -1,33 +1,47 @@
-# function to calculate confidence intervals by inverting permutation test
-# using an offset in GLM for non-zero "null" values.
-# Algorithm: Garthwaite 1996 - Biometrics (uses Robbins-Monro search process)
-# uses m instead of i as recommended in Garthwaite 1996
-
-permci_glm <- function(formula, trt.name, runit, strat = NULL,
-                       family = gaussian, data, nperm = 1000, level = 0.95,
+#' Randomization CI for regression
+#'
+#' Calculate a randomization confidence interval (CI) for a regression parameter.
+#'
+#' These functions are used to calculate randomization confidence intervals (CI)
+#' for a regression parameter. These CIs correspond to inverting randomization
+#' tests by using an offset to test non-zero "null" values. To invert the
+#' randomization test, these functions use a computationally efficient CI
+#' algorithm proposed by
+#' \href{http://doi.org/10.2307/2532852}{Garthwaite (1996)}, which is based on
+#' the Robbins-Monro search process.
+#'
+#' Different functions
+#' corrrespond to different regression models:
+#' \itemize{
+#'   \item \code{permci_glm}: randomization CI based on
+#'   \code{\link[stats]{glm}}
+#'   \item \code{permtest_ic_sp}: randomization CI based on
+#'   \code{\link[icenReg]{ic_sp}}
+#' }
+#' To ensure correct specification of the parameters passed to the models above
+#' (e.g. \code{formula} in \code{\link[icenReg]{ic_sp}}), please refer to their
+#' documentation.
+#'
+#' @inheritParams permtest_glm
+#' @param level two-sided confidence level (e.g. level = 0.95 for 95\% CI)
+#' @param ncores number of cores to use for computation. If ncores > 1, lower
+#' and upper bound search procedures run in parallel.
+#' @param quietly logical; if TRUE (and if ncores == 1), status updates will be
+#' printed to Console otherwise, suppress updates.
+#' @importFrom foreach %dopar%
+#' @export
+permci_glm <- function(formula, trtname, runit, strat = NULL,
+                       family = gaussian, data, nperm = 999, level = 0.95,
                        quietly = F, ncores = 1) {
-  # formula:          formula argument passed to glmer(),
-  #                     e.g. y ~ trt + factor(period) + (1 | clusid)
-  # trt.name:         character string specifying the name of randomized
-  #                     treatment variable in data frame (variable to permute)
-  # runit:            character string specifying the name of unit
-  #                     of randomization in data frame
-  # strat:            character string specifying the name of the variable
-  #                     upon which randomization was stratified
-  # family:           family argument passed to glmer(), e.g. gaussian, binomial
-  # data:             data argument passed to glmer()
-  # quietly:          T if you want some status updates, convergence notes, etc.
-  # ncores:           if >1, then lower/upper run in parallel
-
-  data[, paste0(trt.name, ".obs")] <- data[, trt.name] # obs trt for offset
+  data[, paste0(trtname, ".obs")] <- data[, trtname] # obs trt for offset
 
   alpha <- 1 - level
 
   # get lower/upper with GLM norm approx
   m1 <- glm(formula = formula, family = family, data = data)
   Vcov <- vcov(m1, useScale = FALSE)
-  obs1 <- as.numeric(coef(m1)[trt.name])
-  trt.se <- sqrt(Vcov[trt.name, trt.name])
+  obs1 <- as.numeric(coef(m1)[trtname])
+  trt.se <- sqrt(Vcov[trtname, trtname])
   lower <- obs1 - qnorm(1 - alpha / 2) * trt.se
   upper <- obs1 + qnorm(1 - alpha / 2) * trt.se
 
@@ -44,14 +58,14 @@ permci_glm <- function(formula, trt.name, runit, strat = NULL,
       # search for lower
       low.vec <- c(low, rep(NA, nperm - 1))
       formula.tmp <- update(formula,
-                  as.formula(paste0("~ . + offset(", trt.name, ".obs * low)")))
+                  as.formula(paste0("~ . + offset(", trtname, ".obs * low)")))
       for (i in 1:nperm) {
 
         # permute based on runit
-        data.tmp <- permute(data, trt.name, runit, strat) # permuted data
+        data.tmp <- permute(data, trtname, runit, strat) # permuted data
         model.tmp <- glm(formula = formula.tmp, family = family,
                          data = data.tmp) # fit
-        t <- as.numeric(coef(model.tmp)[trt.name]) # return tx effect estimate
+        t <- as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
         tstar <- (obs1 - low) # tx effect estimate from original permutation
 
         # update using Robbins-Monro step
@@ -72,14 +86,14 @@ permci_glm <- function(formula, trt.name, runit, strat = NULL,
       # search for upper
       up.vec <- c(up, rep(NA, nperm - 1))
       formula.tmp <- update(formula,
-                    as.formula(paste0("~ . + offset(", trt.name, ".obs * up)")))
+                    as.formula(paste0("~ . + offset(", trtname, ".obs * up)")))
       for (i in 1:nperm) {
 
         # permute based on runit
-        data.tmp <- permute(data, trt.name, runit, strat) # permuted data
+        data.tmp <- permute(data, trtname, runit, strat) # permuted data
         model.tmp <- glm(formula = formula.tmp, family = family,
                          data = data.tmp) # fit
-        t <- as.numeric(coef(model.tmp)[trt.name]) # return tx effect estimate
+        t <- as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
         tstar <- (obs1 - up) # tx effect estimate from original permutation
 
         # update using Robbins-Monro step
@@ -111,39 +125,25 @@ permci_glm <- function(formula, trt.name, runit, strat = NULL,
 }
 
 
-# function to calculate confidence intervals by inverting permutation test
-# using an offset in Cox PH model with interval censoring for non-zero "null"
-# values. Algorithm: Garthwaite 1996 - Biometrics (uses Robbins-Monro search
-# process) uses m instead of i as recommended in Garthwaite 1996
-
-permci_ic_sp <- function(formula, trt.name, runit, strat = NULL, data,
+#' @rdname permci_glm
+#' @export
+permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
                          nperm = 999, level = 0.95, quietly = F, ncores = 1) {
-  # formula:          formula argument passed to ic_sp(), e.g. cbind(l, u) ~ trt
-  # trt.name:         character string specifying the name of randomized
-  #                     treatment variable in data frame (variable to permute)
-  # runit:            character string specifying the name of unit
-  #                     of randomization in data frame
-  # strat:            character string specifying the name of the variable
-  #                     upon which randomization was stratified
-  # data:             data argument passed to ic_sp()
-  # quietly:          T if you want some status updates, convergence notes, etc.
-  # ncores:           if >1, then lower/upper run in parallel
-
-  data[, paste0(trt.name, ".obs")] <- data[, trt.name] # obs trt for offset
+  data[, paste0(trtname, ".obs")] <- data[, trtname] # obs trt for offset
 
   alpha <- 1 - level
 
   # get lower/upper with weibull model for interval censored
   m1 <- survreg(formula = formula, data = data)
   Vcov <- vcov(m1, useScale = FALSE)
-  obs1 <- - (as.numeric(coef(m1)[trt.name])) # weibull flips effect
-  trt.se <- sqrt(Vcov[trt.name, trt.name])
+  obs1 <- - (as.numeric(coef(m1)[trtname])) # weibull flips effect
+  trt.se <- sqrt(Vcov[trtname, trtname])
   lower <- obs1 - qnorm(1 - alpha / 2) * trt.se
   upper <- obs1 + qnorm(1 - alpha / 2) * trt.se
 
   # reset m1 and obs1 corresponding to ic_sp
   m1 <- ic_sp(formula = formula, data = data)
-  obs1 <- as.numeric(coef(m1)[trt.name])
+  obs1 <- as.numeric(coef(m1)[trtname])
 
   # initialize at lower/upper
   data$low <- low <- lower
@@ -157,13 +157,13 @@ permci_ic_sp <- function(formula, trt.name, runit, strat = NULL, data,
     if (j == 1 | ncores == 1) {
       low.vec <- c(low, rep(NA, nperm - 1))
       formula.tmp <- update(formula,
-                  as.formula(paste0("~ . + offset(", trt.name, ".obs * low)")))
+                  as.formula(paste0("~ . + offset(", trtname, ".obs * low)")))
       for (i in 1:nperm) {
 
         # permute based on runit
-        data.tmp <- permute(data, trt.name, runit, strat) # permuted data
+        data.tmp <- permute(data, trtname, runit, strat) # permuted data
         model.tmp <- ic_sp(formula = formula.tmp, data = data.tmp) # fit
-        t <- as.numeric(coef(model.tmp)[trt.name]) # return tx effect estimate
+        t <- as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
         tstar <- (obs1 - low) # tx effect estimate from original permutation
 
         # update using Robbins-Monro step
@@ -185,13 +185,13 @@ permci_ic_sp <- function(formula, trt.name, runit, strat = NULL, data,
       # search for upper
       up.vec <- c(up, rep(NA, nperm - 1))
       formula.tmp <- update(formula,
-                    as.formula(paste0("~ . + offset(", trt.name, ".obs * up)")))
+                    as.formula(paste0("~ . + offset(", trtname, ".obs * up)")))
       for (i in 1:nperm) {
 
         # permute based on runit
-        data.tmp <- permute(data, trt.name, runit, strat) # permuted data
+        data.tmp <- permute(data, trtname, runit, strat) # permuted data
         model.tmp <- ic_sp(formula = formula.tmp, data = data.tmp) # fit
-        t <- as.numeric(coef(model.tmp)[trt.name]) # return tx effect estimate
+        t <- as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
         tstar <- (obs1 - up) # tx effect estimate from original permutation
 
         # update using Robbins-Monro step
