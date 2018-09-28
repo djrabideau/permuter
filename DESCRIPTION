@@ -1,13 +1,19 @@
 Package: permuter
 Type: Package
-Title: Randomization inference
-Version: 0.1.0
-Author: Dustin J. Rabideau
-Maintainer: Dustin J. Rabideau <djrabideau@g.harvard.edu>
+Title: Randomization tests and confidence intervals
+Version: 0.0.0.9000
+Authors@R: person("Dustin", "Rabideau", email = "djrabideau@g.harvard.edu",
+    role = c("aut", "cre"))
 Description: This package contains functions to carry out randomization tests 
-and corresponding confidence intervals (CI) for different types of outcomes 
-(e.g. continuous, binary, count, time-to-event) and study designs 
-(e.g. parallel, crossover, stepped wedge).
-License: The MIT License
+    and corresponding confidence intervals (CI) for different types of outcomes 
+    (e.g. continuous, binary, count, time-to-event) and study designs 
+    (e.g. parallel, crossover, stepped wedge).
+Depends: R (>= 3.4.3)
+License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
+Imports:
+    doMC,
+    icenReg,
+    MASS
+RoxygenNote: 6.1.0
