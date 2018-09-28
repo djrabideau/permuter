@@ -41,6 +41,7 @@
 #' # 4       1.4      1  4   1 0
 #' # 5       1.5      1  5   1 0
 #' # 6       1.6      1  6   1 0
+#' @export
 gendata_crt <- function(family = gaussian, nclus, size, theta = 0,
                         sigma, mu, rho = 0, sd = 1) {
   nis <- round(runif(nclus, size[1], size[2]))
