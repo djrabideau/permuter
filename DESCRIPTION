@@ -8,7 +8,7 @@ Description: This package contains functions to carry out randomization tests
     and corresponding confidence intervals (CI) for different types of outcomes 
     (e.g. continuous, binary, count, time-to-event) and study designs 
     (e.g. parallel, crossover, stepped wedge).
-Depends: R (>= 3.4.3)
+Depends: R (>= 3.4.1)
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
