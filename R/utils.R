@@ -3,36 +3,36 @@
 #' \code{permute} returns data with treatment assigments permuted
 #'
 #' This function inputs a data frame and outputs the same data frame with the
-#' \code{trt.name} column permuted according to the randomization scheme
+#' \code{trtname} column permuted according to the randomization scheme
 #' provided. This is a general utility function used within test and confidence
 #' interval functions.
 #'
 #' @param data a data frame
-#' @param trt.name character string specifying the name of randomized treatment
+#' @param trtname character string specifying the name of randomized treatment
 #' variable in data frame (variable to permute)
 #' @param runit character string specifying the name of unit of randomization
 #' in data frame
 #' @param strat character string specifying the name of the variable upon which
 #' randomization was stratified
-permute <- function(data, trt.name, runit, strat = NULL) {
+permute <- function(data, trtname, runit, strat = NULL) {
   if (is.null(strat)) {
     # permute
-    design <- unique(data[, c(runit, trt.name)])
+    design <- unique(data[, c(runit, trtname)])
     pdesign <- design
-    pdesign[, trt.name] <- sample(design[, trt.name])
+    pdesign[, trtname] <- sample(design[, trtname])
   } else {
     # stratified permute
-    design <- unique(data[, c(runit, strat, trt.name)])
+    design <- unique(data[, c(runit, strat, trtname)])
     pdesign <- design
     for (s in unique(design[, strat])) {
-      ptrt <- sample(design[design[, strat] == s, trt.name])
-      pdesign[design[, strat] == s, trt.name] <- ptrt
+      ptrt <- sample(design[design[, strat] == s, trtname])
+      pdesign[design[, strat] == s, trtname] <- ptrt
     }
     pdesign <- pdesign[, - which(names(pdesign) == strat)]
   }
 
-  data <- merge(data[, -which(names(data) == trt.name)], pdesign, by = runit)
-  return(data) # return data frame with permuted trt.name
+  data <- merge(data[, -which(names(data) == trtname)], pdesign, by = runit)
+  return(data) # return data frame with permuted trtname
 }
 
 #' Perform one update using Robbins-Monro search process
