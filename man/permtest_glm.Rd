@@ -3,6 +3,7 @@
 \name{permtest_glm}
 \alias{permtest_glm}
 \alias{permtest_ic_sp}
+\alias{permtest_survreg}
 \title{Randomization test for regression}
 \usage{
 permtest_glm(formula, trtname, runit, strat = NULL, family = gaussian,
@@ -10,6 +11,9 @@ permtest_glm(formula, trtname, runit, strat = NULL, family = gaussian,
 
 permtest_ic_sp(formula, trtname, runit, strat = NULL, data,
   nperm = 999, ncores = 1, quietly = F)
+
+permtest_survreg(formula, trtname, runit, strat = NULL, data,
+  dist = "weibull", nperm = 999, ncores = 1, quietly = F)
 }
 \arguments{
 \item{formula}{an object of class "\code{\link[stats]{formula}}"
@@ -27,9 +31,9 @@ in data frame}
 randomization was stratified}
 
 \item{family}{a description of the error distribution and link function to
-be used in the data generation model. This can be a character string
-naming a family function, a family function or the result of a call to a
-family function. (See \code{\link[stats]{family}} for details.)}
+be used in the model. This can be a character string naming a family
+function, a family function or the result of a call to a family function.
+(See \code{\link[stats]{family}} for details.)}
 
 \item{data}{a data frame containing the variables in the model. This argument
 is passed to the corresponding regression function, e.g.
@@ -40,6 +44,13 @@ runs in parallel.}
 
 \item{quietly}{logical; if TRUE (and if ncores == 1), status updates will be
 printed to Console otherwise, suppress updates.}
+
+\item{dist}{assumed distribution for y variable. If the argument is a
+character string, then it is assumed to name an element from
+\code{\link[survival]{survreg.distributions}}. These include "weibull",
+"exponential", "gaussian", "logistic","lognormal" and "loglogistic".
+Otherwise, it is assumed to be a user defined list conforming to the format
+described in \code{\link[survival]{survreg.distributions}}.}
 }
 \description{
 Carry out a randomization test for a treatment effect using a regression
@@ -54,6 +65,8 @@ Different functions corrrespond to different regression models:
   \code{\link[stats]{glm}}
   \item \code{permtest_ic_sp}: randomization test based on
   \code{\link[icenReg]{ic_sp}}
+  \item \code{permtest_survreg}: randomization test based on
+  \code{\link[survival]{survreg}}
 }
 To ensure correct specification of the parameters passed to the models above
 (e.g. \code{formula} in \code{\link[icenReg]{ic_sp}}), please refer to their

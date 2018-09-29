@@ -3,6 +3,8 @@
 export(gendata_crt)
 export(permci_glm)
 export(permci_ic_sp)
+export(permci_survreg)
 export(permtest_glm)
 export(permtest_ic_sp)
+export(permtest_survreg)
 importFrom(foreach,"%dopar%")

@@ -11,6 +11,8 @@
 #'   \code{\link[stats]{glm}}
 #'   \item \code{permtest_ic_sp}: randomization test based on
 #'   \code{\link[icenReg]{ic_sp}}
+#'   \item \code{permtest_survreg}: randomization test based on
+#'   \code{\link[survival]{survreg}}
 #' }
 #' To ensure correct specification of the parameters passed to the models above
 #' (e.g. \code{formula} in \code{\link[icenReg]{ic_sp}}), please refer to their
@@ -22,9 +24,9 @@
 #' function, e.g. \code{\link[stats]{glm}} (see Details).
 #' @inheritParams permute
 #' @param family a description of the error distribution and link function to
-#'     be used in the data generation model. This can be a character string
-#'     naming a family function, a family function or the result of a call to a
-#'     family function. (See \code{\link[stats]{family}} for details.)
+#'     be used in the model. This can be a character string naming a family
+#'     function, a family function or the result of a call to a family function.
+#'     (See \code{\link[stats]{family}} for details.)
 #' @param data a data frame containing the variables in the model. This argument
 #' is passed to the corresponding regression function, e.g.
 #' \code{\link[stats]{glm}} (see Details).
@@ -32,6 +34,12 @@
 #' runs in parallel.
 #' @param quietly logical; if TRUE (and if ncores == 1), status updates will be
 #' printed to Console otherwise, suppress updates.
+#' @param dist assumed distribution for y variable. If the argument is a
+#' character string, then it is assumed to name an element from
+#' \code{\link[survival]{survreg.distributions}}. These include "weibull",
+#' "exponential", "gaussian", "logistic","lognormal" and "loglogistic".
+#' Otherwise, it is assumed to be a user defined list conforming to the format
+#' described in \code{\link[survival]{survreg.distributions}}.
 #' @importFrom foreach %dopar%
 #' @export
 permtest_glm <- function(formula, trtname, runit, strat = NULL,
@@ -80,6 +88,39 @@ permtest_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
   perm.stat <- foreach::foreach(i = 1:nperm, .combine = c) %dopar% {
     data.tmp <- permute(data, trtname, runit, strat) # permuted data
     model.tmp <- ic_sp(formula = formula, data = data.tmp) # fit
+
+    if (ncores == 1 & !quietly & i %in% seq(ceiling(nperm / 10), nperm,
+                                            ceiling(nperm / 10)))
+      cat(i, "of", nperm, "permutations complete\n")
+
+    as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
+  }
+
+  comb.stat1 <- c(obs1, perm.stat)
+
+  pval.perm <- mean(abs(comb.stat1) >= abs(obs1)) # prop more extreme than obs
+
+  out <- c(obs1, pval.perm)
+  names(out) <- c(trtname, "p.perm")
+  return(out)
+}
+
+#' @rdname permtest_glm
+#' @export
+permtest_survreg <- function(formula, trtname, runit, strat = NULL, data,
+                             dist = "weibull", nperm = 999, ncores = 1,
+                             quietly = F) {
+  # fit
+  m1 <- survreg(formula = formula, data = data, dist = dist)
+  obs1 <- as.numeric(coef(m1)[trtname])
+
+  perm.stat <- rep(0, nperm)
+
+  # permute based on runit
+  doMC::registerDoMC(ncores)
+  perm.stat <- foreach::foreach(i = 1:nperm, .combine = c) %dopar% {
+    data.tmp <- permute(data, trtname, runit, strat) # permuted data
+    model.tmp <- survreg(formula = formula, data = data.tmp, dist = dist) # fit
 
     if (ncores == 1 & !quietly & i %in% seq(ceiling(nperm / 10), nperm,
                                             ceiling(nperm / 10)))
