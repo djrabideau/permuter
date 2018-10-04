@@ -138,10 +138,13 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
   # get lower/upper with weibull model for interval censored
   m1 <- survreg(formula = formula, data = data)
   Vcov <- vcov(m1, useScale = FALSE)
-  obs1 <- - (as.numeric(coef(m1)[trtname])) # weibull flips effect
+  obs1 <- as.numeric(coef(m1)[trtname])
   trt.se <- sqrt(Vcov[trtname, trtname])
-  lower <- obs1 - qnorm(1 - alpha / 2) * trt.se
-  upper <- obs1 + qnorm(1 - alpha / 2) * trt.se
+  lower.sr <- obs1 - qnorm(1 - alpha / 2) * trt.se
+  upper.sr <- obs1 + qnorm(1 - alpha / 2) * trt.se
+  # re-parameterize from survreg to ic_sp
+  lower <- - upper.sr / m1$scale
+  upper <- - lower.sr / m1$scale
 
   # reset m1 and obs1 corresponding to ic_sp
   m1 <- ic_sp(formula = formula, data = data)
