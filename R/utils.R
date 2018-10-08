@@ -9,11 +9,11 @@
 #'
 #' @param data a data frame
 #' @param trtname character string specifying the name of randomized treatment
-#' variable in data frame (variable to permute)
+#' variable in \code{data} (variable to permute)
 #' @param runit character string specifying the name of unit of randomization
-#' in data frame
-#' @param strat character string specifying the name of the variable upon which
-#' randomization was stratified
+#' in \code{data}
+#' @param strat an optional character string specifying the name of the variable
+#' in \code{data} upon which randomization was stratified
 permute <- function(data, trtname, runit, strat = NULL) {
   if (is.null(strat)) {
     # permute
@@ -53,15 +53,17 @@ permute <- function(data, trtname, runit, strat = NULL) {
 #' @param tstar test statistic for original permutation
 #' @param alpha corresponds to 100(1 - alpha / 2)\% CI
 #' @param i iteration of the search process
-#' @param m initial magnitude of the steps
+#' @param m an optional initial magnitude of the steps; if left unspecified,
+#' m defaults to recommended value proposed in Garthwaite and Buckland (1992)
 #' @param bound "lower" or "upper"; i.e. which confidence bound you want
-update_rm <- function(init, thetahat, t, tstar, alpha, i, m = NULL, bound) {
+update_rm <- function(init, thetahat, t, tstar, alpha, i, m, bound) {
   if (!(bound %in% c("lower", "upper")))
     stop("please choose 'lower' or 'upper' for bound")
 
   g.alpha <- alpha / 2 # alpha as defined in Garthwaite paper
   # "m" defaults to suggestion in Garthwaite and Buckland 92
-  if (is.null(m)) m <- min(c(50, ceiling(0.3 * (2 - g.alpha) / g.alpha)))
+  if (missing(m))
+    m <- min(c(50, ceiling(0.3 * (2 - g.alpha) / g.alpha)))
 
   # k for c length constant
   z <- qnorm(1 - g.alpha)

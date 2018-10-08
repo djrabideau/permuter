@@ -22,13 +22,13 @@ model to be fitted. This argument is passed to the corresponding regression
 function, e.g. \code{\link[stats]{glm}} (see Details).}
 
 \item{trtname}{character string specifying the name of randomized treatment
-variable in data frame (variable to permute)}
+variable in \code{data} (variable to permute)}
 
 \item{runit}{character string specifying the name of unit of randomization
-in data frame}
+in \code{data}}
 
-\item{strat}{character string specifying the name of the variable upon which
-randomization was stratified}
+\item{strat}{an optional character string specifying the name of the variable
+in \code{data} upon which randomization was stratified}
 
 \item{family}{a description of the error distribution and link function to
 be used in the model. This can be a character string naming a family

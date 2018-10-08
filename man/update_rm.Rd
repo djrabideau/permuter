@@ -4,7 +4,7 @@
 \alias{update_rm}
 \title{Perform one update using Robbins-Monro search process}
 \usage{
-update_rm(init, thetahat, t, tstar, alpha, i, m = NULL, bound)
+update_rm(init, thetahat, t, tstar, alpha, i, m, bound)
 }
 \arguments{
 \item{init}{initial (or most recent) estimate (e.g. L_i or U_i)}
@@ -20,7 +20,8 @@ original data}
 
 \item{i}{iteration of the search process}
 
-\item{m}{initial magnitude of the steps}
+\item{m}{an optional initial magnitude of the steps; if left unspecified,
+m defaults to recommended value proposed in Garthwaite and Buckland (1992)}
 
 \item{bound}{"lower" or "upper"; i.e. which confidence bound you want}
 }

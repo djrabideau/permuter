@@ -10,13 +10,13 @@ permute(data, trtname, runit, strat = NULL)
 \item{data}{a data frame}
 
 \item{trtname}{character string specifying the name of randomized treatment
-variable in data frame (variable to permute)}
+variable in \code{data} (variable to permute)}
 
 \item{runit}{character string specifying the name of unit of randomization
-in data frame}
+in \code{data}}
 
-\item{strat}{character string specifying the name of the variable upon which
-randomization was stratified}
+\item{strat}{an optional character string specifying the name of the variable
+in \code{data} upon which randomization was stratified}
 }
 \description{
 \code{permute} returns data with treatment assigments permuted
