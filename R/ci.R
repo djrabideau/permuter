@@ -76,7 +76,7 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
         data.tmp$low <- low
         low.vec[i] <- low
 
-        if (!quietly & i %in% seq(ceiling(nperm / 10), nperm,
+        if (ncores == 1 & !quietly & i %in% seq(ceiling(nperm / 10), nperm,
                                   ceiling(nperm / 10)))
           cat(i, "of", nperm, "permutations complete\n")
       }
@@ -104,7 +104,7 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
         data.tmp$up <- up
         up.vec[i] <- up
 
-        if (!quietly & i %in% seq(ceiling(nperm / 10), nperm,
+        if (ncores == 1 & !quietly & i %in% seq(ceiling(nperm / 10), nperm,
                                   ceiling(nperm / 10)))
           cat(i, "of", nperm, "permutations complete\n")
       }
