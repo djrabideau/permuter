@@ -7,13 +7,13 @@
 \title{Randomization CI for regression}
 \usage{
 permci_glm(formula, trtname, runit, strat = NULL, family = gaussian,
-  data, nperm = 1000, level = 0.95, quietly = F, ncores = 1)
+  data, nperm = 1000, level = 0.95, init, quietly = F, ncores = 1)
 
 permci_ic_sp(formula, trtname, runit, strat = NULL, data, nperm = 1000,
-  level = 0.95, quietly = F, ncores = 1)
+  level = 0.95, init, quietly = F, ncores = 1)
 
 permci_survreg(formula, trtname, runit, strat = NULL, data,
-  dist = "weibull", nperm = 1000, level = 0.95, quietly = F,
+  dist = "weibull", nperm = 1000, level = 0.95, init, quietly = F,
   ncores = 1)
 }
 \arguments{
@@ -40,7 +40,13 @@ function, a family function or the result of a call to a family function.
 is passed to the corresponding regression function, e.g.
 \code{\link[stats]{glm}} (see Details).}
 
+\item{nperm}{number of permutations for each randomization CI bound}
+
 \item{level}{two-sided confidence level (e.g. level = 0.95 for 95\% CI)}
+
+\item{init}{vector of initial values for CI, with lower bound as
+first element and upper bound as second. If \code{init} not provided,
+initial bounds are based on asymptotic approximations.}
 
 \item{quietly}{logical; if TRUE (and if ncores == 1), status updates will be
 printed to Console otherwise, suppress updates.}

@@ -30,6 +30,7 @@
 #' @param data a data frame containing the variables in the model. This argument
 #' is passed to the corresponding regression function, e.g.
 #' \code{\link[stats]{glm}} (see Details).
+#' @param nperm number of permutations for randomization test
 #' @param ncores number of cores to use for computation. If ncores > 1, permtest
 #' runs in parallel.
 #' @param quietly logical; if TRUE (and if ncores == 1), status updates will be

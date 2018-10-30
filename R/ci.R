@@ -26,6 +26,10 @@
 #'
 #' @inheritParams permtest_glm
 #' @param level two-sided confidence level (e.g. level = 0.95 for 95\% CI)
+#' @param init vector of initial values for CI, with lower bound as
+#' first element and upper bound as second. If \code{init} not provided,
+#' initial bounds are based on asymptotic approximations.
+#' @param nperm number of permutations for each randomization CI bound
 #' @param ncores number of cores to use for computation. If ncores > 1, lower
 #' and upper bound search procedures run in parallel.
 #' @param quietly logical; if TRUE (and if ncores == 1), status updates will be
@@ -34,7 +38,7 @@
 #' @export
 permci_glm <- function(formula, trtname, runit, strat = NULL,
                        family = gaussian, data, nperm = 1000, level = 0.95,
-                       quietly = F, ncores = 1) {
+                       init, quietly = F, ncores = 1) {
   data[, paste0(trtname, ".obs")] <- data[, trtname] # obs trt for offset
 
   alpha <- 1 - level
@@ -47,9 +51,15 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
   lower <- obs1 - qnorm(1 - alpha / 2) * trt.se
   upper <- obs1 + qnorm(1 - alpha / 2) * trt.se
 
-  # initialize at lower/upper
-  data$low <- low <- lower
-  data$up <- up <- upper
+  if (missing(init)) {
+    # initialize at asymptotic lower/upper
+    data$low <- low <- lower
+    data$up <- up <- upper
+  } else {
+    # initialize at given initial values
+    data$low <- low <- init[1]
+    data$up <- up <- init[2]
+  }
 
   # if more than 1 core, run lower/upper in parallel
   doMC::registerDoMC(ncores)
@@ -130,7 +140,8 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
 #' @rdname permci_glm
 #' @export
 permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
-                         nperm = 1000, level = 0.95, quietly = F, ncores = 1) {
+                         nperm = 1000, level = 0.95, init, quietly = F,
+                         ncores = 1) {
   data[, paste0(trtname, ".obs")] <- data[, trtname] # obs trt for offset
 
   alpha <- 1 - level
@@ -150,9 +161,15 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
   m1 <- ic_sp(formula = formula, data = data)
   obs1 <- as.numeric(coef(m1)[trtname])
 
-  # initialize at lower/upper
-  data$low <- low <- lower
-  data$up <- up <- upper
+  if (missing(init)) {
+    # initialize at asymptotic lower/upper
+    data$low <- low <- lower
+    data$up <- up <- upper
+  } else {
+    # initialize at given initial values
+    data$low <- low <- init[1]
+    data$up <- up <- init[2]
+  }
 
   # if more than 1 core, run lower/upper in parallel
   doMC::registerDoMC(ncores)
@@ -232,7 +249,7 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
 #' @export
 permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
                            dist = "weibull", nperm = 1000, level = 0.95,
-                           quietly = F, ncores = 1) {
+                           init, quietly = F, ncores = 1) {
   data[, paste0(trtname, ".obs")] <- data[, trtname] # obs trt for offset
 
   alpha <- 1 - level
@@ -245,9 +262,15 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
   lower <- obs1 - qnorm(1 - alpha / 2) * trt.se
   upper <- obs1 + qnorm(1 - alpha / 2) * trt.se
 
-  # initialize at lower/upper
-  data$low <- low <- lower
-  data$up <- up <- upper
+  if (missing(init)) {
+    # initialize at asymptotic lower/upper
+    data$low <- low <- lower
+    data$up <- up <- upper
+  } else {
+    # initialize at given initial values
+    data$low <- low <- init[1]
+    data$up <- up <- init[2]
+  }
 
   # if more than 1 core, run lower/upper in parallel
   doMC::registerDoMC(ncores)

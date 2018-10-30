@@ -39,6 +39,8 @@ function, a family function or the result of a call to a family function.
 is passed to the corresponding regression function, e.g.
 \code{\link[stats]{glm}} (see Details).}
 
+\item{nperm}{number of permutations for randomization test}
+
 \item{ncores}{number of cores to use for computation. If ncores > 1, permtest
 runs in parallel.}
 
