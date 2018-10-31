@@ -29,16 +29,25 @@
 #' @param init vector of initial values for CI, with lower bound as
 #' first element and upper bound as second. If \code{init} not provided,
 #' initial bounds are based on asymptotic approximations.
+#' @param initmethod character; indicates the method to be used for initial
+#' values for CI. If "asymp" (default), initial bounds are based on asymptotic
+#' approximation (e.g. Wald CI for GLM). If "perm", initial bounds are based
+#' on the permutation approach used in Garthwaite (1996) with \eqn{\hat{\theta}
+#' \pm \{(t_2 - t_1)/2\}}, where \eqn{t_1} and \eqn{t_2} denote the second
+#' smallest and second largest estimates from the permutation test.
 #' @param nperm number of permutations for each randomization CI bound
 #' @param ncores number of cores to use for computation. If ncores > 1, lower
 #' and upper bound search procedures run in parallel.
 #' @param quietly logical; if TRUE (and if ncores == 1), status updates will be
 #' printed to Console otherwise, suppress updates.
+#' @param ... optional arguments to \code{\link[permuter]{update_rm}}, e.g.
+#' \code{m} controls the initial magnitude of the steps
 #' @importFrom foreach %dopar%
 #' @export
 permci_glm <- function(formula, trtname, runit, strat = NULL,
                        family = gaussian, data, nperm = 1000, level = 0.95,
-                       init, quietly = F, ncores = 1) {
+                       init, initmethod = 'asymp',
+                       quietly = F, ncores = 1, ...) {
   data[, paste0(trtname, ".obs")] <- data[, trtname] # obs trt for offset
 
   alpha <- 1 - level
@@ -52,14 +61,40 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
   upper <- obs1 + qnorm(1 - alpha / 2) * trt.se
 
   if (missing(init)) {
-    # initialize at asymptotic lower/upper
-    data$low <- low <- lower
-    data$up <- up <- upper
+    if (initmethod == 'asymp') {
+      # initialize at asymptotic lower/upper
+      data$low <- low <- lower
+      data$up <- up <- upper
+    } else if (initmethod == 'perm') {
+      # initialize using quick randomization test of H0: theta = obs1,
+      # as recommended in Garthwaite (1996)
+      g.alpha <- alpha / 2 # alpha as defined in Garthwaite paper
+      nperm_init <- ceiling((2 - g.alpha) / g.alpha)
+      data$obs1 <- obs1
+      formula.tmp <- update(formula,
+                  as.formula(paste0("~ . + offset(", trtname, ".obs * obs1)")))
+      doMC::registerDoMC(ncores)
+      perm.stat <- foreach::foreach(i = 1:nperm_init, .combine = c) %dopar% {
+        data.tmp <- permute(data, trtname, runit, strat) # permuted data
+        model.tmp <- glm(formula = formula.tmp, family = family,
+                         data = data.tmp) # fit
+        as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
+      }
+      t1 <- sort(perm.stat)[2] # 2nd to smallest
+      t2 <- sort(perm.stat)[nperm_init - 1] # 2nd to largest
+      data$low <- low <- obs1 - ((t2 - t1) / 2)
+      data$up <- up <- obs1 + ((t2 - t1) / 2)
+    } else {
+      print(initmethod)
+      stop("'initmethod' not recognized")
+    }
   } else {
     # initialize at given initial values
     data$low <- low <- init[1]
     data$up <- up <- init[2]
   }
+
+  inits <- c(low, up)
 
   # if more than 1 core, run lower/upper in parallel
   doMC::registerDoMC(ncores)
@@ -82,7 +117,7 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
 
         # update using Robbins-Monro step
         low <- update_rm(init = low, thetahat = obs1, t, tstar, alpha, i,
-                         bound = "lower")
+                         bound = "lower", ...)
         data.tmp$low <- low
         low.vec[i] <- low
 
@@ -110,7 +145,7 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
 
         # update using Robbins-Monro step
         up <- update_rm(init = up, thetahat = obs1, t, tstar, alpha, i,
-                        bound = "upper")
+                        bound = "upper", ...)
         data.tmp$up <- up
         up.vec[i] <- up
 
@@ -133,15 +168,16 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
   } # end foreach
 
   dimnames(trace)[[2]] <- c("lower", "upper")
-  return(list(ci = c(trace[nperm, 1], trace[nperm, 2]), trace = trace))
+  return(list(ci = c(trace[nperm, 1], trace[nperm, 2]), trace = trace,
+              init = inits))
 }
 
 
 #' @rdname permci_glm
 #' @export
 permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
-                         nperm = 1000, level = 0.95, init, quietly = F,
-                         ncores = 1) {
+                         nperm = 1000, level = 0.95, init, initmethod = 'asymp',
+                         quietly = F, ncores = 1, ...) {
   data[, paste0(trtname, ".obs")] <- data[, trtname] # obs trt for offset
 
   alpha <- 1 - level
@@ -162,14 +198,39 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
   obs1 <- as.numeric(coef(m1)[trtname])
 
   if (missing(init)) {
-    # initialize at asymptotic lower/upper
-    data$low <- low <- lower
-    data$up <- up <- upper
+    if (initmethod == 'asymp') {
+      # initialize at asymptotic lower/upper
+      data$low <- low <- lower
+      data$up <- up <- upper
+    } else if (initmethod == 'perm') {
+      # initialize using quick randomization test of H0: theta = obs1,
+      # as recommended in Garthwaite (1996)
+      g.alpha <- alpha / 2 # alpha as defined in Garthwaite paper
+      nperm_init <- ceiling((2 - g.alpha) / g.alpha)
+      data$obs1 <- obs1
+      formula.tmp <- update(formula,
+                  as.formula(paste0("~ . + offset(", trtname, ".obs * obs1)")))
+      doMC::registerDoMC(ncores)
+      perm.stat <- foreach::foreach(i = 1:nperm_init, .combine = c) %dopar% {
+        data.tmp <- permute(data, trtname, runit, strat) # permuted data
+        model.tmp <- ic_sp(formula = formula.tmp, data = data.tmp) # fit
+        as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
+      }
+      t1 <- sort(perm.stat)[2] # 2nd to smallest
+      t2 <- sort(perm.stat)[nperm_init - 1] # 2nd to largest
+      data$low <- low <- obs1 - ((t2 - t1) / 2)
+      data$up <- up <- obs1 + ((t2 - t1) / 2)
+    } else {
+      print(initmethod)
+      stop("'initmethod' not recognized")
+    }
   } else {
     # initialize at given initial values
     data$low <- low <- init[1]
     data$up <- up <- init[2]
   }
+
+  inits <- c(low, up)
 
   # if more than 1 core, run lower/upper in parallel
   doMC::registerDoMC(ncores)
@@ -190,7 +251,7 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
 
         # update using Robbins-Monro step
         low <- update_rm(init = low, thetahat = obs1, t, tstar, alpha, i,
-                         bound = "lower")
+                         bound = "lower", ...)
         data.tmp$low <- low
         low.vec[i] <- low
 
@@ -218,7 +279,7 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
 
         # update using Robbins-Monro step
         up <- update_rm(init = up, thetahat = obs1, t, tstar, alpha, i,
-                        bound = "upper")
+                        bound = "upper", ...)
         data.tmp$up <- up
         up.vec[i] <- up
 
@@ -241,7 +302,8 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
   } # end foreach
 
   dimnames(trace)[[2]] <- c("lower", "upper")
-  return(list(ci = c(trace[nperm, 1], trace[nperm, 2]), trace = trace))
+  return(list(ci = c(trace[nperm, 1], trace[nperm, 2]), trace = trace,
+              init = inits))
 }
 
 
@@ -249,7 +311,8 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
 #' @export
 permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
                            dist = "weibull", nperm = 1000, level = 0.95,
-                           init, quietly = F, ncores = 1) {
+                           init, initmethod = 'asymp',
+                           quietly = F, ncores = 1, ...) {
   data[, paste0(trtname, ".obs")] <- data[, trtname] # obs trt for offset
 
   alpha <- 1 - level
@@ -263,14 +326,39 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
   upper <- obs1 + qnorm(1 - alpha / 2) * trt.se
 
   if (missing(init)) {
-    # initialize at asymptotic lower/upper
-    data$low <- low <- lower
-    data$up <- up <- upper
+    if (initmethod == 'asymp') {
+      # initialize at asymptotic lower/upper
+      data$low <- low <- lower
+      data$up <- up <- upper
+    } else if (initmethod == 'perm') {
+      # initialize using quick randomization test of H0: theta = obs1,
+      # as recommended in Garthwaite (1996)
+      g.alpha <- alpha / 2 # alpha as defined in Garthwaite paper
+      nperm_init <- ceiling((2 - g.alpha) / g.alpha)
+      data$obs1 <- obs1
+      formula.tmp <- update(formula,
+                  as.formula(paste0("~ . + offset(", trtname, ".obs * obs1)")))
+      doMC::registerDoMC(ncores)
+      perm.stat <- foreach::foreach(i = 1:nperm_init, .combine = c) %dopar% {
+        data.tmp <- permute(data, trtname, runit, strat) # permuted data
+        model.tmp <- survreg(formula = formula.tmp, data = data.tmp, dist = dist) # fit
+        as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
+      }
+      t1 <- sort(perm.stat)[2] # 2nd to smallest
+      t2 <- sort(perm.stat)[nperm_init - 1] # 2nd to largest
+      data$low <- low <- obs1 - ((t2 - t1) / 2)
+      data$up <- up <- obs1 + ((t2 - t1) / 2)
+    } else {
+      print(initmethod)
+      stop("'initmethod' not recognized")
+    }
   } else {
     # initialize at given initial values
     data$low <- low <- init[1]
     data$up <- up <- init[2]
   }
+
+  inits <- c(low, up)
 
   # if more than 1 core, run lower/upper in parallel
   doMC::registerDoMC(ncores)
@@ -292,7 +380,7 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
 
         # update using Robbins-Monro step
         low <- update_rm(init = low, thetahat = obs1, t, tstar, alpha, i,
-                         bound = "lower")
+                         bound = "lower", ...)
         data.tmp$low <- low
         low.vec[i] <- low
 
@@ -321,7 +409,7 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
 
         # update using Robbins-Monro step
         up <- update_rm(init = up, thetahat = obs1, t, tstar, alpha, i,
-                        bound = "upper")
+                        bound = "upper", ...)
         data.tmp$up <- up
         up.vec[i] <- up
 
@@ -344,5 +432,6 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
   } # end foreach
 
   dimnames(trace)[[2]] <- c("lower", "upper")
-  return(list(ci = c(trace[nperm, 1], trace[nperm, 2]), trace = trace))
+  return(list(ci = c(trace[nperm, 1], trace[nperm, 2]), trace = trace,
+              init = inits))
 }

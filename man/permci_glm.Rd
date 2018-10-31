@@ -7,14 +7,16 @@
 \title{Randomization CI for regression}
 \usage{
 permci_glm(formula, trtname, runit, strat = NULL, family = gaussian,
-  data, nperm = 1000, level = 0.95, init, quietly = F, ncores = 1)
+  data, nperm = 1000, level = 0.95, init, initmethod = "asymp",
+  quietly = F, ncores = 1, ...)
 
 permci_ic_sp(formula, trtname, runit, strat = NULL, data, nperm = 1000,
-  level = 0.95, init, quietly = F, ncores = 1)
+  level = 0.95, init, initmethod = "asymp", quietly = F,
+  ncores = 1, ...)
 
 permci_survreg(formula, trtname, runit, strat = NULL, data,
-  dist = "weibull", nperm = 1000, level = 0.95, init, quietly = F,
-  ncores = 1)
+  dist = "weibull", nperm = 1000, level = 0.95, init,
+  initmethod = "asymp", quietly = F, ncores = 1, ...)
 }
 \arguments{
 \item{formula}{an object of class "\code{\link[stats]{formula}}"
@@ -48,11 +50,21 @@ is passed to the corresponding regression function, e.g.
 first element and upper bound as second. If \code{init} not provided,
 initial bounds are based on asymptotic approximations.}
 
+\item{initmethod}{character; indicates the method to be used for initial
+values for CI. If "asymp" (default), initial bounds are based on asymptotic
+approximation (e.g. Wald CI for GLM). If "perm", initial bounds are based
+on the permutation approach used in Garthwaite (1996) with \eqn{\hat{\theta}
+\pm \{(t_2 - t_1)/2\}}, where \eqn{t_1} and \eqn{t_2} denote the second
+smallest and second largest estimates from the permutation test.}
+
 \item{quietly}{logical; if TRUE (and if ncores == 1), status updates will be
 printed to Console otherwise, suppress updates.}
 
 \item{ncores}{number of cores to use for computation. If ncores > 1, lower
 and upper bound search procedures run in parallel.}
+
+\item{...}{optional arguments to \code{\link[permuter]{update_rm}}, e.g.
+\code{m} controls the initial magnitude of the steps}
 
 \item{dist}{assumed distribution for y variable. If the argument is a
 character string, then it is assumed to name an element from

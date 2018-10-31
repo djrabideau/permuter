@@ -51,7 +51,7 @@ permute <- function(data, trtname, runit, strat = NULL) {
 #' original data
 #' @param t test statistic for new permutation
 #' @param tstar test statistic for original permutation
-#' @param alpha corresponds to 100(1 - alpha / 2)\% CI
+#' @param alpha corresponds to 100(1 - alpha)\% CI
 #' @param i iteration of the search process
 #' @param m an optional initial magnitude of the steps; if left unspecified,
 #' m defaults to recommended value proposed in Garthwaite and Buckland (1992)

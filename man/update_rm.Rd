@@ -16,7 +16,7 @@ original data}
 
 \item{tstar}{test statistic for original permutation}
 
-\item{alpha}{corresponds to 100(1 - alpha / 2)\% CI}
+\item{alpha}{corresponds to 100(1 - alpha)\% CI}
 
 \item{i}{iteration of the search process}
 
