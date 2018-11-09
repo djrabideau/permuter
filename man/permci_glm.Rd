@@ -7,15 +7,15 @@
 \title{Randomization CI for regression}
 \usage{
 permci_glm(formula, trtname, runit, strat = NULL, family = gaussian,
-  data, nperm = 1000, level = 0.95, init, initmethod = "asymp",
-  quietly = F, ncores = 1, ...)
+  data, nperm = 1000, nburn = 0, level = 0.95, init,
+  initmethod = "asymp", quietly = F, ncores = 1, ...)
 
 permci_ic_sp(formula, trtname, runit, strat = NULL, data, nperm = 1000,
-  level = 0.95, init, initmethod = "asymp", quietly = F,
+  nburn = 0, level = 0.95, init, initmethod = "asymp", quietly = F,
   ncores = 1, ...)
 
 permci_survreg(formula, trtname, runit, strat = NULL, data,
-  dist = "weibull", nperm = 1000, level = 0.95, init,
+  dist = "weibull", nperm = 1000, nburn = 0, level = 0.95, init,
   initmethod = "asymp", quietly = F, ncores = 1, ...)
 }
 \arguments{
@@ -43,6 +43,12 @@ is passed to the corresponding regression function, e.g.
 \code{\link[stats]{glm}} (see Details).}
 
 \item{nperm}{number of permutations for each randomization CI bound}
+
+\item{nburn}{number of ``burn-in'' permutations. I.e. algorithm will start at
+\code{init} bounds, run for \code{nburn} permutations, then restart algorithm
+at latest estimates from ``burn-in'' phase and run for another \code{nperm}
+permutations until the final CI estimates are reached. Increasing
+\code{nburn} may help convergence if \code{init} CI bounds are poor.}
 
 \item{level}{two-sided confidence level (e.g. level = 0.95 for 95\% CI)}
 

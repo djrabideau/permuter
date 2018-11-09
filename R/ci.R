@@ -36,6 +36,11 @@
 #' \pm \{(t_2 - t_1)/2\}}, where \eqn{t_1} and \eqn{t_2} denote the second
 #' smallest and second largest estimates from the permutation test.
 #' @param nperm number of permutations for each randomization CI bound
+#' @param nburn number of ``burn-in'' permutations. I.e. algorithm will start at
+#' \code{init} bounds, run for \code{nburn} permutations, then restart algorithm
+#' at latest estimates from ``burn-in'' phase and run for another \code{nperm}
+#' permutations until the final CI estimates are reached. Increasing
+#' \code{nburn} may help convergence if \code{init} CI bounds are poor.
 #' @param ncores number of cores to use for computation. If ncores > 1, lower
 #' and upper bound search procedures run in parallel.
 #' @param quietly logical; if TRUE (and if ncores == 1), status updates will be
@@ -45,8 +50,8 @@
 #' @importFrom foreach %dopar%
 #' @export
 permci_glm <- function(formula, trtname, runit, strat = NULL,
-                       family = gaussian, data, nperm = 1000, level = 0.95,
-                       init, initmethod = 'asymp',
+                       family = gaussian, data, nperm = 1000, nburn = 0,
+                       level = 0.95, init, initmethod = 'asymp',
                        quietly = F, ncores = 1, ...) {
   data[, paste0(trtname, ".obs")] <- data[, trtname] # obs trt for offset
 
@@ -103,10 +108,10 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
   trace <- foreach::foreach(j = 1:min(ncores, 2), .combine = cbind) %dopar% {
     if (j == 1 | ncores == 1) {
       # search for lower
-      low.vec <- c(low, rep(NA, nperm - 1))
+      low.vec <- rep(NA, nperm + nburn)
       formula.tmp <- update(formula,
                   as.formula(paste0("~ . + offset(", trtname, ".obs * low)")))
-      for (i in 1:nperm) {
+      for (i in 1:(nperm + nburn)) {
 
         # permute based on runit
         data.tmp <- permute(data, trtname, runit, strat) # permuted data
@@ -116,14 +121,15 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
         tstar <- (obs1 - low) # tx effect estimate from original permutation
 
         # update using Robbins-Monro step
-        low <- update_rm(init = low, thetahat = obs1, t, tstar, alpha, i,
+        ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
+        low <- update_rm(init = low, thetahat = obs1, t, tstar, alpha, ii,
                          bound = "lower", ...)
         data.tmp$low <- low
         low.vec[i] <- low
 
-        if (ncores == 1 & !quietly & i %in% seq(ceiling(nperm / 10), nperm,
-                                  ceiling(nperm / 10)))
-          cat(i, "of", nperm, "permutations complete\n")
+        if (ncores == 1 & !quietly & i %in% seq(ceiling((nperm + nburn) / 10), (nperm + nburn),
+                                  ceiling((nperm + nburn) / 10)))
+          cat(i, "of", (nperm + nburn), "permutations complete\n")
       }
       if (ncores == 1 & !quietly) cat("lower bound complete\n")
       low.vec
@@ -131,10 +137,10 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
 
     if (j == 2 | ncores == 1) {
       # search for upper
-      up.vec <- c(up, rep(NA, nperm - 1))
+      up.vec <- rep(NA, nperm + nburn)
       formula.tmp <- update(formula,
                     as.formula(paste0("~ . + offset(", trtname, ".obs * up)")))
-      for (i in 1:nperm) {
+      for (i in 1:(nperm + nburn)) {
 
         # permute based on runit
         data.tmp <- permute(data, trtname, runit, strat) # permuted data
@@ -144,14 +150,15 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
         tstar <- (obs1 - up) # tx effect estimate from original permutation
 
         # update using Robbins-Monro step
-        up <- update_rm(init = up, thetahat = obs1, t, tstar, alpha, i,
+        ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
+        up <- update_rm(init = up, thetahat = obs1, t, tstar, alpha, ii,
                         bound = "upper", ...)
         data.tmp$up <- up
         up.vec[i] <- up
 
-        if (ncores == 1 & !quietly & i %in% seq(ceiling(nperm / 10), nperm,
-                                  ceiling(nperm / 10)))
-          cat(i, "of", nperm, "permutations complete\n")
+        if (ncores == 1 & !quietly & i %in% seq(ceiling((nperm + nburn) / 10), (nperm + nburn),
+                                  ceiling((nperm + nburn) / 10)))
+          cat(i, "of", (nperm + nburn), "permutations complete\n")
       }
       if (ncores == 1 & !quietly) cat("upper bound complete\n")
       up.vec
@@ -168,7 +175,7 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
   } # end foreach
 
   dimnames(trace)[[2]] <- c("lower", "upper")
-  return(list(ci = c(trace[nperm, 1], trace[nperm, 2]), trace = trace,
+  return(list(ci = c(trace[nperm + nburn, 1], trace[nperm + nburn, 2]), trace = trace,
               init = inits))
 }
 
@@ -176,7 +183,8 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
 #' @rdname permci_glm
 #' @export
 permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
-                         nperm = 1000, level = 0.95, init, initmethod = 'asymp',
+                         nperm = 1000, nburn = 0,
+                         level = 0.95, init, initmethod = 'asymp',
                          quietly = F, ncores = 1, ...) {
   data[, paste0(trtname, ".obs")] <- data[, trtname] # obs trt for offset
 
@@ -238,10 +246,10 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
   # search for lower
   trace <- foreach::foreach(j = 1:min(ncores, 2), .combine = cbind) %dopar% {
     if (j == 1 | ncores == 1) {
-      low.vec <- c(low, rep(NA, nperm - 1))
+      low.vec <- rep(NA, nperm + nburn)
       formula.tmp <- update(formula,
                   as.formula(paste0("~ . + offset(", trtname, ".obs * low)")))
-      for (i in 1:nperm) {
+      for (i in 1:(nperm + nburn)) {
 
         # permute based on runit
         data.tmp <- permute(data, trtname, runit, strat) # permuted data
@@ -250,14 +258,15 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
         tstar <- (obs1 - low) # tx effect estimate from original permutation
 
         # update using Robbins-Monro step
-        low <- update_rm(init = low, thetahat = obs1, t, tstar, alpha, i,
+        ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
+        low <- update_rm(init = low, thetahat = obs1, t, tstar, alpha, ii,
                          bound = "lower", ...)
         data.tmp$low <- low
         low.vec[i] <- low
 
-        if (ncores == 1 & !quietly & i %in% seq(ceiling(nperm / 10), nperm,
-                                              ceiling(nperm / 10)))
-          cat(i, "of", nperm, "permutations complete\n")
+        if (ncores == 1 & !quietly & i %in% seq(ceiling((nperm + nburn) / 10), (nperm + nburn),
+                                              ceiling((nperm + nburn) / 10)))
+          cat(i, "of", (nperm + nburn), "permutations complete\n")
       }
       if (ncores == 1 & !quietly) cat("lower bound complete\n")
       low.vec
@@ -266,10 +275,10 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
     if (j == 2 | ncores == 1) {
 
       # search for upper
-      up.vec <- c(up, rep(NA, nperm - 1))
+      up.vec <- rep(NA, nperm + nburn)
       formula.tmp <- update(formula,
                     as.formula(paste0("~ . + offset(", trtname, ".obs * up)")))
-      for (i in 1:nperm) {
+      for (i in 1:(nperm + nburn)) {
 
         # permute based on runit
         data.tmp <- permute(data, trtname, runit, strat) # permuted data
@@ -278,14 +287,15 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
         tstar <- (obs1 - up) # tx effect estimate from original permutation
 
         # update using Robbins-Monro step
-        up <- update_rm(init = up, thetahat = obs1, t, tstar, alpha, i,
+        ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
+        up <- update_rm(init = up, thetahat = obs1, t, tstar, alpha, ii,
                         bound = "upper", ...)
         data.tmp$up <- up
         up.vec[i] <- up
 
-        if (ncores == 1 & !quietly & i %in% seq(ceiling(nperm / 10), nperm,
-                                              ceiling(nperm / 10)))
-          cat(i, "of", nperm, "permutations complete\n")
+        if (ncores == 1 & !quietly & i %in% seq(ceiling((nperm + nburn) / 10), (nperm + nburn),
+                                              ceiling((nperm + nburn) / 10)))
+          cat(i, "of", (nperm + nburn), "permutations complete\n")
       }
       if (ncores == 1 & !quietly) cat("upper bound complete\n")
       up.vec
@@ -302,7 +312,7 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
   } # end foreach
 
   dimnames(trace)[[2]] <- c("lower", "upper")
-  return(list(ci = c(trace[nperm, 1], trace[nperm, 2]), trace = trace,
+  return(list(ci = c(trace[nperm + nburn, 1], trace[nperm + nburn, 2]), trace = trace,
               init = inits))
 }
 
@@ -310,8 +320,8 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
 #' @rdname permci_glm
 #' @export
 permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
-                           dist = "weibull", nperm = 1000, level = 0.95,
-                           init, initmethod = 'asymp',
+                           dist = "weibull", nperm = 1000, nburn = 0,
+                           level = 0.95, init, initmethod = 'asymp',
                            quietly = F, ncores = 1, ...) {
   data[, paste0(trtname, ".obs")] <- data[, trtname] # obs trt for offset
 
@@ -366,10 +376,10 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
   # search for lower
   trace <- foreach::foreach(j = 1:min(ncores, 2), .combine = cbind) %dopar% {
     if (j == 1 | ncores == 1) {
-      low.vec <- c(low, rep(NA, nperm - 1))
+      low.vec <- rep(NA, nperm + nburn)
       formula.tmp <- update(formula,
                   as.formula(paste0("~ . + offset(", trtname, ".obs * low)")))
-      for (i in 1:nperm) {
+      for (i in 1:(nperm + nburn)) {
 
         # permute based on runit
         data.tmp <- permute(data, trtname, runit, strat) # permuted data
@@ -379,14 +389,15 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
         tstar <- (obs1 - low) # tx effect estimate from original permutation
 
         # update using Robbins-Monro step
-        low <- update_rm(init = low, thetahat = obs1, t, tstar, alpha, i,
+        ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
+        low <- update_rm(init = low, thetahat = obs1, t, tstar, alpha, ii,
                          bound = "lower", ...)
         data.tmp$low <- low
         low.vec[i] <- low
 
-        if (ncores == 1 & !quietly & i %in% seq(ceiling(nperm / 10), nperm,
-                                              ceiling(nperm / 10)))
-          cat(i, "of", nperm, "permutations complete\n")
+        if (ncores == 1 & !quietly & i %in% seq(ceiling((nperm + nburn) / 10), (nperm + nburn),
+                                              ceiling((nperm + nburn) / 10)))
+          cat(i, "of", (nperm + nburn), "permutations complete\n")
       }
       if (ncores == 1 & !quietly) cat("lower bound complete\n")
       low.vec
@@ -395,10 +406,10 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
     if (j == 2 | ncores == 1) {
 
       # search for upper
-      up.vec <- c(up, rep(NA, nperm - 1))
+      up.vec <- rep(NA, nperm + nburn)
       formula.tmp <- update(formula,
                     as.formula(paste0("~ . + offset(", trtname, ".obs * up)")))
-      for (i in 1:nperm) {
+      for (i in 1:(nperm + nburn)) {
 
         # permute based on runit
         data.tmp <- permute(data, trtname, runit, strat) # permuted data
@@ -408,14 +419,15 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
         tstar <- (obs1 - up) # tx effect estimate from original permutation
 
         # update using Robbins-Monro step
-        up <- update_rm(init = up, thetahat = obs1, t, tstar, alpha, i,
+        ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
+        up <- update_rm(init = up, thetahat = obs1, t, tstar, alpha, ii,
                         bound = "upper", ...)
         data.tmp$up <- up
         up.vec[i] <- up
 
-        if (ncores == 1 & !quietly & i %in% seq(ceiling(nperm / 10), nperm,
-                                              ceiling(nperm / 10)))
-          cat(i, "of", nperm, "permutations complete\n")
+        if (ncores == 1 & !quietly & i %in% seq(ceiling((nperm + nburn) / 10), (nperm + nburn),
+                                              ceiling((nperm + nburn) / 10)))
+          cat(i, "of", (nperm + nburn), "permutations complete\n")
       }
       if (ncores == 1 & !quietly) cat("upper bound complete\n")
       up.vec
@@ -432,6 +444,6 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
   } # end foreach
 
   dimnames(trace)[[2]] <- c("lower", "upper")
-  return(list(ci = c(trace[nperm, 1], trace[nperm, 2]), trace = trace,
+  return(list(ci = c(trace[nperm + nburn, 1], trace[nperm + nburn, 2]), trace = trace,
               init = inits))
 }
