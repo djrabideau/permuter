@@ -14,7 +14,8 @@
 #'     naming a family function, a family function or the result of a call to a
 #'     family function. (See \code{\link[stats]{family}} for details.)
 #'     Currently \code{gendata_crt} supports gaussian, binomial, and poisson.
-#' @param nclus number of clusters
+#' @param nclus vector of length 2 specifying the number of clusters in
+#' treatment group (trt == 1) and control group (trt == 0), respectively
 #' @param size vector of length 2 specifying range of cluster sizes that will be
 #'     drawn from a uniform distribution
 #' @param theta treatment effect
@@ -27,11 +28,11 @@
 #' @examples
 #' # generate data from GLMM with bernoulli outcome,
 #' # treatment odds ratio of 1.5, baseline odds in
-#' # control group of 0.3, 10 clusters with sizes
-#' # ranging from 100 to 200.
+#' # control group of 0.3, 10 clusters (5 in each group)
+#' # with sizes ranging from 100 to 200.
 #'
 #' set.seed(444)
-#' ds <- gendata_crt(family = binomial, nclus = 10, size = c(100, 200),
+#' ds <- gendata_crt(family = binomial, nclus = c(5, 5), size = c(100, 200),
 #'     theta = log(1.5), sigma = 0.5, mu = log(0.3))
 #' head(ds)
 #' #   unique.id clusid id trt y
@@ -44,24 +45,25 @@
 #' @export
 gendata_crt <- function(family = gaussian, nclus, size, theta = 0,
                         sigma, mu, rho = 0, sd = 1) {
-  nis <- round(runif(nclus, size[1], size[2]))
+  nclus_tot <- sum(nclus)
+  nis <- round(runif(nclus_tot, size[1], size[2]))
   ntot <- sum(nis)
   mymu <- rep(mu, ntot)
   # covariance matrix for random cluster effects
-  Sigma <- diag(rep(sigma^2, nclus))
+  Sigma <- diag(rep(sigma^2, nclus_tot))
   Sigma[lower.tri(Sigma)] <- Sigma[upper.tri(Sigma)] <- sigma^2 * rho
   # random cluster effects
-  alpha <- MASS::mvrnorm(1, rep(0, nclus), Sigma)
+  alpha <- MASS::mvrnorm(1, rep(0, nclus_tot), Sigma)
   myalpha <- rep(alpha, nis)
 
   # create an individual id formatted as cluster#.individual#
   id <- unlist(lapply(nis, function(x) 1:x))
-  clusid <- rep(1:nclus, nis)
+  clusid <- rep(1:nclus_tot, nis)
   unique.id <- paste(clusid, id, sep = ".")
 
-  # generate entire vector of treatment assignments
-  if (nclus / 2 - round(nclus / 2) > 0) stop("nclus not even")
-  trt <- clusid %% 2 # modulo division so that odd clusters trt=1, even trt=0
+  # generate entire vector of treatment assignments where first nclus[1] are
+  # trt = 1, next nclus[2] are trt = 0
+  trt <- as.numeric(clusid <= nclus[1])
 
   # generate outcome
   if (is.character(family))

@@ -14,7 +14,8 @@ naming a family function, a family function or the result of a call to a
 family function. (See \code{\link[stats]{family}} for details.)
 Currently \code{gendata_crt} supports gaussian, binomial, and poisson.}
 
-\item{nclus}{number of clusters}
+\item{nclus}{vector of length 2 specifying the number of clusters in
+treatment group (trt == 1) and control group (trt == 0), respectively}
 
 \item{size}{vector of length 2 specifying range of cluster sizes that will be
 drawn from a uniform distribution}
@@ -44,11 +45,11 @@ where \eqn{X_k} is the treatment indicator for the \eqn{k}th cluster and
 \examples{
 # generate data from GLMM with bernoulli outcome,
 # treatment odds ratio of 1.5, baseline odds in
-# control group of 0.3, 10 clusters with sizes
-# ranging from 100 to 200.
+# control group of 0.3, 10 clusters (5 in each group)
+# with sizes ranging from 100 to 200.
 
 set.seed(444)
-ds <- gendata_crt(family = binomial, nclus = 10, size = c(100, 200),
+ds <- gendata_crt(family = binomial, nclus = c(5, 5), size = c(100, 200),
     theta = log(1.5), sigma = 0.5, mu = log(0.3))
 head(ds)
 #   unique.id clusid id trt y
