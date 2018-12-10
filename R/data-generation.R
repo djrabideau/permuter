@@ -45,6 +45,11 @@
 #' @export
 gendata_crt <- function(family = gaussian, nclus, size, theta = 0,
                         sigma, mu, rho = 0, sd = 1) {
+  if (length(nclus) != 2)
+    stop("length(nclus) should be 2")
+  if (length(size) != 2)
+    stop("length(size) should be 2")
+
   nclus_tot <- sum(nclus)
   nis <- round(runif(nclus_tot, size[1], size[2]))
   ntot <- sum(nis)
