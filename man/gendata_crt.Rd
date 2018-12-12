@@ -4,8 +4,8 @@
 \alias{gendata_crt}
 \title{Generate data from GLMM}
 \usage{
-gendata_crt(family = gaussian, nclus, size, theta = 0, sigma, mu,
-  rho = 0, sd = 1)
+gendata_crt(family = gaussian, nclus, size, theta = 0, sigma, Sigma,
+  mu, rho = 0, sd = 1)
 }
 \arguments{
 \item{family}{a description of the error distribution and link function to
@@ -22,7 +22,9 @@ drawn from a uniform distribution}
 
 \item{theta}{treatment effect}
 
-\item{sigma}{SD of random cluster effect}
+\item{sigma}{SD of random cluster effect; ignored if \code{Sigma} is specified}
+
+\item{Sigma}{optional user-specified covariance matrix for random cluster effects}
 
 \item{mu}{intercept in GLMM}
 
@@ -40,7 +42,9 @@ with a fixed intercept, fixed treatment effect, and random cluster intercept.
 The data will be sorted increasing by cluster then subject. The GLMM is
 \deqn{g(E[Y_{ki}]) = \mu + \alpha_k + \theta * X_k}
 where \eqn{X_k} is the treatment indicator for the \eqn{k}th cluster and
-\eqn{\alpha ~ N(0, \sigma^2)}.
+\eqn{\alpha ~ N(0, Sigma)}. If only \code{sigma} is specified, then
+\code{Sigma} is exchangeable with \code{sigma^2} on the diagonals and
+\code{rho * sigma^2} on the off-diagonals.
 }
 \examples{
 # generate data from GLMM with bernoulli outcome,
