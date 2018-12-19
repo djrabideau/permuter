@@ -8,16 +8,16 @@
 \title{Randomization test for regression}
 \usage{
 permtest_glm(formula, trtname, runit, strat = NULL, family = gaussian,
-  data, nperm = 999, ncores = 1, quietly = F)
+  data, nperm = 999, ncores = 1, quietly = F, seed)
 
 permtest_ic_sp(formula, trtname, runit, strat = NULL, data,
-  nperm = 999, ncores = 1, quietly = F)
+  nperm = 999, ncores = 1, quietly = F, seed)
 
 permtest_survreg(formula, trtname, runit, strat = NULL, data,
-  dist = "weibull", nperm = 999, ncores = 1, quietly = F)
+  dist = "weibull", nperm = 999, ncores = 1, quietly = F, seed)
 
 permtest_coxph(formula, trtname, runit, strat = NULL, data,
-  nperm = 999, ncores = 1, quietly = F)
+  nperm = 999, ncores = 1, quietly = F, seed)
 }
 \arguments{
 \item{formula}{an object of class "\code{\link[stats]{formula}}"
@@ -50,6 +50,9 @@ runs in parallel.}
 
 \item{quietly}{logical; if TRUE (and if ncores == 1), status updates will be
 printed to Console otherwise, suppress updates.}
+
+\item{seed}{a numerical seed to use, passed to
+\code{\link[doRNG]{registerDoRNG}}}
 
 \item{dist}{assumed distribution for y variable. If the argument is a
 character string, then it is assumed to name an element from

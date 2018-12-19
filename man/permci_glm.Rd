@@ -21,7 +21,7 @@ permci_survreg(formula, trtname, runit, strat = NULL, data,
 
 permci_coxph(formula, trtname, runit, strat = NULL, data, nperm = 1000,
   nburn = 0, level = 0.95, init, initmethod = "asymp", quietly = F,
-  ncores = 1, ...)
+  ncores = 1, seed, ...)
 }
 \arguments{
 \item{formula}{an object of class "\code{\link[stats]{formula}}"
@@ -83,6 +83,9 @@ character string, then it is assumed to name an element from
 "exponential", "gaussian", "logistic","lognormal" and "loglogistic".
 Otherwise, it is assumed to be a user defined list conforming to the format
 described in \code{\link[survival]{survreg.distributions}}.}
+
+\item{seed}{a numerical seed to use, passed to
+\code{\link[doRNG]{registerDoRNG}}}
 }
 \description{
 Calculate a randomization confidence interval (CI) for a regression parameter.

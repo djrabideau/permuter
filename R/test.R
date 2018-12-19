@@ -35,6 +35,8 @@
 #' @param nperm number of permutations for randomization test
 #' @param ncores number of cores to use for computation. If ncores > 1, permtest
 #' runs in parallel.
+#' @param seed a numerical seed to use, passed to
+#' \code{\link[doRNG]{registerDoRNG}}
 #' @param quietly logical; if TRUE (and if ncores == 1), status updates will be
 #' printed to Console otherwise, suppress updates.
 #' @param dist assumed distribution for y variable. If the argument is a
@@ -47,7 +49,7 @@
 #' @export
 permtest_glm <- function(formula, trtname, runit, strat = NULL,
                          family = gaussian, data, nperm = 999, ncores = 1,
-                         quietly = F) {
+                         quietly = F, seed) {
   # fit glm
   m1 <- glm(formula = formula, family = family, data = data)
   obs1 <- as.numeric(coef(m1)[trtname])
@@ -56,6 +58,8 @@ permtest_glm <- function(formula, trtname, runit, strat = NULL,
 
   # permute based on runit
   doMC::registerDoMC(ncores)
+  if (!missing(seed))
+    doRNG::registerDoRNG(seed)
   perm.stat <- foreach::foreach(i = 1:nperm, .combine = c) %dopar% {
     data.tmp <- permute(data, trtname, runit, strat) # permuted data
     model.tmp <- glm(formula = formula, family = family, data = data.tmp) # fit
@@ -79,7 +83,7 @@ permtest_glm <- function(formula, trtname, runit, strat = NULL,
 #' @rdname permtest_glm
 #' @export
 permtest_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
-                           nperm = 999, ncores = 1, quietly = F) {
+                           nperm = 999, ncores = 1, quietly = F, seed) {
   # fit ic_sp
   m1 <- icenReg::ic_sp(formula = formula, data = data)
   obs1 <- as.numeric(coef(m1)[trtname])
@@ -88,6 +92,8 @@ permtest_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
 
   # permute based on runit
   doMC::registerDoMC(ncores)
+  if (!missing(seed))
+    doRNG::registerDoRNG(seed)
   perm.stat <- foreach::foreach(i = 1:nperm, .combine = c) %dopar% {
     data.tmp <- permute(data, trtname, runit, strat) # permuted data
     model.tmp <- icenReg::ic_sp(formula = formula, data = data.tmp) # fit
@@ -112,7 +118,7 @@ permtest_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
 #' @export
 permtest_survreg <- function(formula, trtname, runit, strat = NULL, data,
                              dist = "weibull", nperm = 999, ncores = 1,
-                             quietly = F) {
+                             quietly = F, seed) {
   # fit
   m1 <- survival::survreg(formula = formula, data = data, dist = dist)
   obs1 <- as.numeric(coef(m1)[trtname])
@@ -121,6 +127,8 @@ permtest_survreg <- function(formula, trtname, runit, strat = NULL, data,
 
   # permute based on runit
   doMC::registerDoMC(ncores)
+  if (!missing(seed))
+    doRNG::registerDoRNG(seed)
   perm.stat <- foreach::foreach(i = 1:nperm, .combine = c) %dopar% {
     data.tmp <- permute(data, trtname, runit, strat) # permuted data
     model.tmp <- survival::survreg(formula = formula, data = data.tmp,
@@ -145,7 +153,7 @@ permtest_survreg <- function(formula, trtname, runit, strat = NULL, data,
 #' @rdname permtest_glm
 #' @export
 permtest_coxph <- function(formula, trtname, runit, strat = NULL, data,
-                             nperm = 999, ncores = 1, quietly = F) {
+                             nperm = 999, ncores = 1, quietly = F, seed) {
   # fit
   m1 <- survival::coxph(formula = formula, data = data)
   obs1 <- as.numeric(coef(m1)[trtname])
@@ -154,6 +162,8 @@ permtest_coxph <- function(formula, trtname, runit, strat = NULL, data,
 
   # permute based on runit
   doMC::registerDoMC(ncores)
+  if (!missing(seed))
+    doRNG::registerDoRNG(seed)
   perm.stat <- foreach::foreach(i = 1:nperm, .combine = c) %dopar% {
     data.tmp <- permute(data, trtname, runit, strat) # permuted data
     model.tmp <- survival::coxph(formula = formula, data = data.tmp) # fit
