@@ -13,7 +13,7 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Imports:
-    doMC,
+    doParallel,
     doRNG,
     icenReg,
     MASS
