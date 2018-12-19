@@ -48,11 +48,19 @@
 #' @param ... optional arguments to \code{\link[permuter]{update_rm}}, e.g.
 #' \code{m} controls the initial magnitude of the steps
 #' @importFrom foreach %dopar%
+#' @importFrom doRNG %dorng%
+#' @importFrom survival Surv
 #' @export
 permci_glm <- function(formula, trtname, runit, strat = NULL,
                        family = gaussian, data, nperm = 1000, nburn = 0,
                        level = 0.95, init, initmethod = 'asymp',
-                       quietly = F, ncores = 1, ...) {
+                       quietly = F, ncores = 1, seed, ...) {
+  if (ncores > 1) {
+    doParallel::registerDoParallel(cores = ncores)
+    if (!missing(seed))
+      doRNG::registerDoRNG(seed)
+  }
+
   data[, paste0(trtname, ".obs")] <- data[, trtname] # obs trt for offset
 
   alpha <- 1 - level
@@ -78,7 +86,6 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
       data$obs1 <- obs1
       formula.tmp <- update(formula,
                   as.formula(paste0("~ . + offset(", trtname, ".obs * obs1)")))
-      doMC::registerDoMC(ncores)
       perm.stat <- foreach::foreach(i = 1:nperm_init, .combine = c) %dopar% {
         data.tmp <- permute(data, trtname, runit, strat) # permuted data
         model.tmp <- glm(formula = formula.tmp, family = family,
@@ -102,8 +109,6 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
   inits <- c(low, up)
 
   # if more than 1 core, run lower/upper in parallel
-  doMC::registerDoMC(ncores)
-
   # invert test for CI using offset approach
   trace <- foreach::foreach(j = 1:min(ncores, 2), .combine = cbind) %dopar% {
     if (j == 1 | ncores == 1) {
@@ -185,7 +190,13 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
 permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
                          nperm = 1000, nburn = 0,
                          level = 0.95, init, initmethod = 'asymp',
-                         quietly = F, ncores = 1, ...) {
+                         quietly = F, ncores = 1, seed, ...) {
+  if (ncores > 1) {
+    doParallel::registerDoParallel(cores = ncores)
+    if (!missing(seed))
+      doRNG::registerDoRNG(seed)
+  }
+
   data[, paste0(trtname, ".obs")] <- data[, trtname] # obs trt for offset
 
   alpha <- 1 - level
@@ -218,7 +229,6 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
       data$obs1 <- obs1
       formula.tmp <- update(formula,
                   as.formula(paste0("~ . + offset(", trtname, ".obs * obs1)")))
-      doMC::registerDoMC(ncores)
       perm.stat <- foreach::foreach(i = 1:nperm_init, .combine = c) %dopar% {
         data.tmp <- permute(data, trtname, runit, strat) # permuted data
         model.tmp <- icenReg::ic_sp(formula = formula.tmp, data = data.tmp) # fit
@@ -241,8 +251,6 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
   inits <- c(low, up)
 
   # if more than 1 core, run lower/upper in parallel
-  doMC::registerDoMC(ncores)
-
   # search for lower
   trace <- foreach::foreach(j = 1:min(ncores, 2), .combine = cbind) %dopar% {
     if (j == 1 | ncores == 1) {
@@ -322,7 +330,13 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
 permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
                            dist = "weibull", nperm = 1000, nburn = 0,
                            level = 0.95, init, initmethod = 'asymp',
-                           quietly = F, ncores = 1, ...) {
+                           quietly = F, ncores = 1, seed, ...) {
+  if (ncores > 1) {
+    doParallel::registerDoParallel(cores = ncores)
+    if (!missing(seed))
+      doRNG::registerDoRNG(seed)
+  }
+
   data[, paste0(trtname, ".obs")] <- data[, trtname] # obs trt for offset
 
   alpha <- 1 - level
@@ -348,7 +362,6 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
       data$obs1 <- obs1
       formula.tmp <- update(formula,
                   as.formula(paste0("~ . + offset(", trtname, ".obs * obs1)")))
-      doMC::registerDoMC(ncores)
       perm.stat <- foreach::foreach(i = 1:nperm_init, .combine = c) %dopar% {
         data.tmp <- permute(data, trtname, runit, strat) # permuted data
         model.tmp <- survival::survreg(formula = formula.tmp, data = data.tmp, dist = dist) # fit
@@ -371,8 +384,6 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
   inits <- c(low, up)
 
   # if more than 1 core, run lower/upper in parallel
-  doMC::registerDoMC(ncores)
-
   # search for lower
   trace <- foreach::foreach(j = 1:min(ncores, 2), .combine = cbind) %dopar% {
     if (j == 1 | ncores == 1) {
@@ -456,7 +467,7 @@ permci_coxph <- function(formula, trtname, runit, strat = NULL, data,
                            level = 0.95, init, initmethod = 'asymp',
                            quietly = F, ncores = 1, seed, ...) {
   if (ncores > 1) {
-    doMC::registerDoMC(ncores)
+    doParallel::registerDoParallel(cores = ncores)
     if (!missing(seed))
       doRNG::registerDoRNG(seed)
   }

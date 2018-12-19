@@ -46,6 +46,8 @@
 #' Otherwise, it is assumed to be a user defined list conforming to the format
 #' described in \code{\link[survival]{survreg.distributions}}.
 #' @importFrom foreach %dopar%
+#' @importFrom doRNG %dorng%
+#' @importFrom survival Surv
 #' @export
 permtest_glm <- function(formula, trtname, runit, strat = NULL,
                          family = gaussian, data, nperm = 999, ncores = 1,
@@ -57,7 +59,7 @@ permtest_glm <- function(formula, trtname, runit, strat = NULL,
   perm.stat <- rep(0, nperm)
 
   # permute based on runit
-  doMC::registerDoMC(ncores)
+  doParallel::registerDoParallel(cores = ncores)
   if (!missing(seed))
     doRNG::registerDoRNG(seed)
   perm.stat <- foreach::foreach(i = 1:nperm, .combine = c) %dopar% {
@@ -91,7 +93,7 @@ permtest_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
   perm.stat <- rep(0, nperm)
 
   # permute based on runit
-  doMC::registerDoMC(ncores)
+  doParallel::registerDoParallel(cores = ncores)
   if (!missing(seed))
     doRNG::registerDoRNG(seed)
   perm.stat <- foreach::foreach(i = 1:nperm, .combine = c) %dopar% {
@@ -126,7 +128,7 @@ permtest_survreg <- function(formula, trtname, runit, strat = NULL, data,
   perm.stat <- rep(0, nperm)
 
   # permute based on runit
-  doMC::registerDoMC(ncores)
+  doParallel::registerDoParallel(cores = ncores)
   if (!missing(seed))
     doRNG::registerDoRNG(seed)
   perm.stat <- foreach::foreach(i = 1:nperm, .combine = c) %dopar% {
@@ -161,7 +163,7 @@ permtest_coxph <- function(formula, trtname, runit, strat = NULL, data,
   perm.stat <- rep(0, nperm)
 
   # permute based on runit
-  doMC::registerDoMC(ncores)
+  doParallel::registerDoParallel(cores = ncores)
   if (!missing(seed))
     doRNG::registerDoRNG(seed)
   perm.stat <- foreach::foreach(i = 1:nperm, .combine = c) %dopar% {

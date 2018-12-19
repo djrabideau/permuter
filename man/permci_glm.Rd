@@ -9,15 +9,15 @@
 \usage{
 permci_glm(formula, trtname, runit, strat = NULL, family = gaussian,
   data, nperm = 1000, nburn = 0, level = 0.95, init,
-  initmethod = "asymp", quietly = F, ncores = 1, ...)
+  initmethod = "asymp", quietly = F, ncores = 1, seed, ...)
 
 permci_ic_sp(formula, trtname, runit, strat = NULL, data, nperm = 1000,
   nburn = 0, level = 0.95, init, initmethod = "asymp", quietly = F,
-  ncores = 1, ...)
+  ncores = 1, seed, ...)
 
 permci_survreg(formula, trtname, runit, strat = NULL, data,
   dist = "weibull", nperm = 1000, nburn = 0, level = 0.95, init,
-  initmethod = "asymp", quietly = F, ncores = 1, ...)
+  initmethod = "asymp", quietly = F, ncores = 1, seed, ...)
 
 permci_coxph(formula, trtname, runit, strat = NULL, data, nperm = 1000,
   nburn = 0, level = 0.95, init, initmethod = "asymp", quietly = F,
@@ -74,6 +74,9 @@ printed to Console otherwise, suppress updates.}
 \item{ncores}{number of cores to use for computation. If ncores > 1, lower
 and upper bound search procedures run in parallel.}
 
+\item{seed}{a numerical seed to use, passed to
+\code{\link[doRNG]{registerDoRNG}}}
+
 \item{...}{optional arguments to \code{\link[permuter]{update_rm}}, e.g.
 \code{m} controls the initial magnitude of the steps}
 
@@ -83,9 +86,6 @@ character string, then it is assumed to name an element from
 "exponential", "gaussian", "logistic","lognormal" and "loglogistic".
 Otherwise, it is assumed to be a user defined list conforming to the format
 described in \code{\link[survival]{survreg.distributions}}.}
-
-\item{seed}{a numerical seed to use, passed to
-\code{\link[doRNG]{registerDoRNG}}}
 }
 \description{
 Calculate a randomization confidence interval (CI) for a regression parameter.
