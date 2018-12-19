@@ -4,6 +4,7 @@
 \alias{permtest_glm}
 \alias{permtest_ic_sp}
 \alias{permtest_survreg}
+\alias{permtest_coxph}
 \title{Randomization test for regression}
 \usage{
 permtest_glm(formula, trtname, runit, strat = NULL, family = gaussian,
@@ -14,6 +15,9 @@ permtest_ic_sp(formula, trtname, runit, strat = NULL, data,
 
 permtest_survreg(formula, trtname, runit, strat = NULL, data,
   dist = "weibull", nperm = 999, ncores = 1, quietly = F)
+
+permtest_coxph(formula, trtname, runit, strat = NULL, data,
+  nperm = 999, ncores = 1, quietly = F)
 }
 \arguments{
 \item{formula}{an object of class "\code{\link[stats]{formula}}"
@@ -69,6 +73,8 @@ Different functions corrrespond to different regression models:
   \code{\link[icenReg]{ic_sp}}
   \item \code{permtest_survreg}: randomization test based on
   \code{\link[survival]{survreg}}
+  \item \code{permtest_coxph}: randomization test based on
+  \code{\link[survival]{coxph}}
 }
 To ensure correct specification of the parameters passed to the models above
 (e.g. \code{formula} in \code{\link[icenReg]{ic_sp}}), please refer to their

@@ -13,6 +13,8 @@
 #'   \code{\link[icenReg]{ic_sp}}
 #'   \item \code{permtest_survreg}: randomization test based on
 #'   \code{\link[survival]{survreg}}
+#'   \item \code{permtest_coxph}: randomization test based on
+#'   \code{\link[survival]{coxph}}
 #' }
 #' To ensure correct specification of the parameters passed to the models above
 #' (e.g. \code{formula} in \code{\link[icenReg]{ic_sp}}), please refer to their
@@ -79,7 +81,7 @@ permtest_glm <- function(formula, trtname, runit, strat = NULL,
 permtest_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
                            nperm = 999, ncores = 1, quietly = F) {
   # fit ic_sp
-  m1 <- ic_sp(formula = formula, data = data)
+  m1 <- icenReg::ic_sp(formula = formula, data = data)
   obs1 <- as.numeric(coef(m1)[trtname])
 
   perm.stat <- rep(0, nperm)
@@ -88,7 +90,7 @@ permtest_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
   doMC::registerDoMC(ncores)
   perm.stat <- foreach::foreach(i = 1:nperm, .combine = c) %dopar% {
     data.tmp <- permute(data, trtname, runit, strat) # permuted data
-    model.tmp <- ic_sp(formula = formula, data = data.tmp) # fit
+    model.tmp <- icenReg::ic_sp(formula = formula, data = data.tmp) # fit
 
     if (ncores == 1 & !quietly & i %in% seq(ceiling(nperm / 10), nperm,
                                             ceiling(nperm / 10)))
@@ -112,7 +114,7 @@ permtest_survreg <- function(formula, trtname, runit, strat = NULL, data,
                              dist = "weibull", nperm = 999, ncores = 1,
                              quietly = F) {
   # fit
-  m1 <- survreg(formula = formula, data = data, dist = dist)
+  m1 <- survival::survreg(formula = formula, data = data, dist = dist)
   obs1 <- as.numeric(coef(m1)[trtname])
 
   perm.stat <- rep(0, nperm)
@@ -121,7 +123,40 @@ permtest_survreg <- function(formula, trtname, runit, strat = NULL, data,
   doMC::registerDoMC(ncores)
   perm.stat <- foreach::foreach(i = 1:nperm, .combine = c) %dopar% {
     data.tmp <- permute(data, trtname, runit, strat) # permuted data
-    model.tmp <- survreg(formula = formula, data = data.tmp, dist = dist) # fit
+    model.tmp <- survival::survreg(formula = formula, data = data.tmp,
+                                   dist = dist) # fit
+
+    if (ncores == 1 & !quietly & i %in% seq(ceiling(nperm / 10), nperm,
+                                            ceiling(nperm / 10)))
+      cat(i, "of", nperm, "permutations complete\n")
+
+    as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
+  }
+
+  comb.stat1 <- c(obs1, perm.stat)
+
+  pval.perm <- mean(abs(comb.stat1) >= abs(obs1)) # prop more extreme than obs
+
+  out <- c(obs1, pval.perm)
+  names(out) <- c(trtname, "p.perm")
+  return(out)
+}
+
+#' @rdname permtest_glm
+#' @export
+permtest_coxph <- function(formula, trtname, runit, strat = NULL, data,
+                             nperm = 999, ncores = 1, quietly = F) {
+  # fit
+  m1 <- survival::coxph(formula = formula, data = data)
+  obs1 <- as.numeric(coef(m1)[trtname])
+
+  perm.stat <- rep(0, nperm)
+
+  # permute based on runit
+  doMC::registerDoMC(ncores)
+  perm.stat <- foreach::foreach(i = 1:nperm, .combine = c) %dopar% {
+    data.tmp <- permute(data, trtname, runit, strat) # permuted data
+    model.tmp <- survival::coxph(formula = formula, data = data.tmp) # fit
 
     if (ncores == 1 & !quietly & i %in% seq(ceiling(nperm / 10), nperm,
                                             ceiling(nperm / 10)))

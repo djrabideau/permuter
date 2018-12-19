@@ -4,6 +4,7 @@
 \alias{permci_glm}
 \alias{permci_ic_sp}
 \alias{permci_survreg}
+\alias{permci_coxph}
 \title{Randomization CI for regression}
 \usage{
 permci_glm(formula, trtname, runit, strat = NULL, family = gaussian,
@@ -17,6 +18,10 @@ permci_ic_sp(formula, trtname, runit, strat = NULL, data, nperm = 1000,
 permci_survreg(formula, trtname, runit, strat = NULL, data,
   dist = "weibull", nperm = 1000, nburn = 0, level = 0.95, init,
   initmethod = "asymp", quietly = F, ncores = 1, ...)
+
+permci_coxph(formula, trtname, runit, strat = NULL, data, nperm = 1000,
+  nburn = 0, level = 0.95, init, initmethod = "asymp", quietly = F,
+  ncores = 1, ...)
 }
 \arguments{
 \item{formula}{an object of class "\code{\link[stats]{formula}}"
@@ -98,8 +103,8 @@ corrrespond to different regression models:
   \code{\link[stats]{glm}}
   \item \code{permci_ic_sp}: randomization CI based on
   \code{\link[icenReg]{ic_sp}}
-  \item \code{permci_survreg}: randomization CI based on
-  \code{\link[survival]{survreg}}
+  \item \code{permci_survival::survreg}: randomization CI based on
+  \code{\link[survival]{survival::survreg}}
 }
 To ensure correct specification of the parameters passed to the models above
 (e.g. \code{formula} in \code{\link[icenReg]{ic_sp}}), please refer to their

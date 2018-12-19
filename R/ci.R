@@ -17,8 +17,8 @@
 #'   \code{\link[stats]{glm}}
 #'   \item \code{permci_ic_sp}: randomization CI based on
 #'   \code{\link[icenReg]{ic_sp}}
-#'   \item \code{permci_survreg}: randomization CI based on
-#'   \code{\link[survival]{survreg}}
+#'   \item \code{permci_survival::survreg}: randomization CI based on
+#'   \code{\link[survival]{survival::survreg}}
 #' }
 #' To ensure correct specification of the parameters passed to the models above
 #' (e.g. \code{formula} in \code{\link[icenReg]{ic_sp}}), please refer to their
@@ -191,18 +191,18 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
   alpha <- 1 - level
 
   # get lower/upper with weibull model for interval censored
-  m1 <- survreg(formula = formula, data = data)
+  m1 <- survival::survreg(formula = formula, data = data)
   Vcov <- vcov(m1, useScale = FALSE)
   obs1 <- as.numeric(coef(m1)[trtname])
   trt.se <- sqrt(Vcov[trtname, trtname])
   lower.sr <- obs1 - qnorm(1 - alpha / 2) * trt.se
   upper.sr <- obs1 + qnorm(1 - alpha / 2) * trt.se
-  # re-parameterize from survreg to ic_sp
+  # re-parameterize from survival::survreg to ic_sp
   lower <- - upper.sr / m1$scale
   upper <- - lower.sr / m1$scale
 
   # reset m1 and obs1 corresponding to ic_sp
-  m1 <- ic_sp(formula = formula, data = data)
+  m1 <- icenReg::ic_sp(formula = formula, data = data)
   obs1 <- as.numeric(coef(m1)[trtname])
 
   if (missing(init)) {
@@ -221,7 +221,7 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
       doMC::registerDoMC(ncores)
       perm.stat <- foreach::foreach(i = 1:nperm_init, .combine = c) %dopar% {
         data.tmp <- permute(data, trtname, runit, strat) # permuted data
-        model.tmp <- ic_sp(formula = formula.tmp, data = data.tmp) # fit
+        model.tmp <- icenReg::ic_sp(formula = formula.tmp, data = data.tmp) # fit
         as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
       }
       t1 <- sort(perm.stat)[2] # 2nd to smallest
@@ -253,7 +253,7 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
 
         # permute based on runit
         data.tmp <- permute(data, trtname, runit, strat) # permuted data
-        model.tmp <- ic_sp(formula = formula.tmp, data = data.tmp) # fit
+        model.tmp <- icenReg::ic_sp(formula = formula.tmp, data = data.tmp) # fit
         t <- as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
         tstar <- (obs1 - low) # tx effect estimate from original permutation
 
@@ -282,7 +282,7 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
 
         # permute based on runit
         data.tmp <- permute(data, trtname, runit, strat) # permuted data
-        model.tmp <- ic_sp(formula = formula.tmp, data = data.tmp) # fit
+        model.tmp <- icenReg::ic_sp(formula = formula.tmp, data = data.tmp) # fit
         t <- as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
         tstar <- (obs1 - up) # tx effect estimate from original permutation
 
@@ -327,8 +327,8 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
 
   alpha <- 1 - level
 
-  # get lower/upper with survreg
-  m1 <- survreg(formula = formula, data = data, dist = dist)
+  # get lower/upper with survival::survreg
+  m1 <- survival::survreg(formula = formula, data = data, dist = dist)
   Vcov <- vcov(m1, useScale = FALSE)
   obs1 <- as.numeric(coef(m1)[trtname])
   trt.se <- sqrt(Vcov[trtname, trtname])
@@ -351,7 +351,7 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
       doMC::registerDoMC(ncores)
       perm.stat <- foreach::foreach(i = 1:nperm_init, .combine = c) %dopar% {
         data.tmp <- permute(data, trtname, runit, strat) # permuted data
-        model.tmp <- survreg(formula = formula.tmp, data = data.tmp, dist = dist) # fit
+        model.tmp <- survival::survreg(formula = formula.tmp, data = data.tmp, dist = dist) # fit
         as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
       }
       t1 <- sort(perm.stat)[2] # 2nd to smallest
@@ -383,7 +383,7 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
 
         # permute based on runit
         data.tmp <- permute(data, trtname, runit, strat) # permuted data
-        model.tmp <- survreg(formula = formula.tmp, data = data.tmp,
+        model.tmp <- survival::survreg(formula = formula.tmp, data = data.tmp,
                              dist = dist) # fit
         t <- as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
         tstar <- (obs1 - low) # tx effect estimate from original permutation
@@ -413,7 +413,7 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
 
         # permute based on runit
         data.tmp <- permute(data, trtname, runit, strat) # permuted data
-        model.tmp <- survreg(formula = formula.tmp, data = data.tmp,
+        model.tmp <- survival::survreg(formula = formula.tmp, data = data.tmp,
                              dist = dist) # fit
         t <- as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
         tstar <- (obs1 - up) # tx effect estimate from original permutation
@@ -427,6 +427,136 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
 
         if (ncores == 1 & !quietly & i %in% seq(ceiling((nperm + nburn) / 10), (nperm + nburn),
                                               ceiling((nperm + nburn) / 10)))
+          cat(i, "of", (nperm + nburn), "permutations complete\n")
+      }
+      if (ncores == 1 & !quietly) cat("upper bound complete\n")
+      up.vec
+    }
+
+    # return these values
+    if (ncores == 1) {
+      cbind(low.vec, up.vec)
+    } else if (j == 1) {
+      low.vec
+    } else {
+      up.vec
+    }
+  } # end foreach
+
+  dimnames(trace)[[2]] <- c("lower", "upper")
+  return(list(ci = c(trace[nperm + nburn, 1], trace[nperm + nburn, 2]), trace = trace,
+              init = inits))
+}
+
+
+#' @rdname permci_glm
+#' @export
+permci_coxph <- function(formula, trtname, runit, strat = NULL, data,
+                           nperm = 1000, nburn = 0,
+                           level = 0.95, init, initmethod = 'asymp',
+                           quietly = F, ncores = 1, ...) {
+  data[, paste0(trtname, ".obs")] <- data[, trtname] # obs trt for offset
+
+  alpha <- 1 - level
+
+  # get lower/upper with survival::coxph
+  m1 <- survival::coxph(formula = formula, data = data)
+  Vcov <- vcov(m1, useScale = FALSE)
+  obs1 <- as.numeric(coef(m1)[trtname])
+  trt.se <- sqrt(Vcov[trtname, trtname])
+  lower <- obs1 - qnorm(1 - alpha / 2) * trt.se
+  upper <- obs1 + qnorm(1 - alpha / 2) * trt.se
+
+  if (missing(init)) {
+    if (initmethod == 'asymp') {
+      # initialize at asymptotic lower/upper
+      data$low <- low <- lower
+      data$up <- up <- upper
+    } else if (initmethod == 'perm') {
+      # initialize using quick randomization test of H0: theta = obs1,
+      # as recommended in Garthwaite (1996)
+      g.alpha <- alpha / 2 # alpha as defined in Garthwaite paper
+      nperm_init <- ceiling((2 - g.alpha) / g.alpha)
+      data$obs1 <- obs1
+      formula.tmp <- update(formula,
+                            as.formula(paste0("~ . + offset(", trtname, ".obs * obs1)")))
+      doMC::registerDoMC(ncores)
+      perm.stat <- foreach::foreach(i = 1:nperm_init, .combine = c) %dopar% {
+        data.tmp <- permute(data, trtname, runit, strat) # permuted data
+        model.tmp <- survival::coxph(formula = formula.tmp, data = data.tmp) # fit
+        as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
+      }
+      t1 <- sort(perm.stat)[2] # 2nd to smallest
+      t2 <- sort(perm.stat)[nperm_init - 1] # 2nd to largest
+      data$low <- low <- obs1 - ((t2 - t1) / 2)
+      data$up <- up <- obs1 + ((t2 - t1) / 2)
+    } else {
+      print(initmethod)
+      stop("'initmethod' not recognized")
+    }
+  } else {
+    # initialize at given initial values
+    data$low <- low <- init[1]
+    data$up <- up <- init[2]
+  }
+
+  inits <- c(low, up)
+
+  # if more than 1 core, run lower/upper in parallel
+  doMC::registerDoMC(ncores)
+
+  # search for lower
+  trace <- foreach::foreach(j = 1:min(ncores, 2), .combine = cbind) %dopar% {
+    if (j == 1 | ncores == 1) {
+      low.vec <- rep(NA, nperm + nburn)
+      formula.tmp <- update(formula,
+                            as.formula(paste0("~ . + offset(", trtname, ".obs * low)")))
+      for (i in 1:(nperm + nburn)) {
+
+        # permute based on runit
+        data.tmp <- permute(data, trtname, runit, strat) # permuted data
+        model.tmp <- survival::coxph(formula = formula.tmp, data = data.tmp) # fit
+        t <- as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
+        tstar <- (obs1 - low) # tx effect estimate from original permutation
+
+        # update using Robbins-Monro step
+        ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
+        low <- update_rm(init = low, thetahat = obs1, t, tstar, alpha, ii,
+                         bound = "lower", ...)
+        data.tmp$low <- low
+        low.vec[i] <- low
+
+        if (ncores == 1 & !quietly & i %in% seq(ceiling((nperm + nburn) / 10), (nperm + nburn),
+                                                ceiling((nperm + nburn) / 10)))
+          cat(i, "of", (nperm + nburn), "permutations complete\n")
+      }
+      if (ncores == 1 & !quietly) cat("lower bound complete\n")
+      low.vec
+    }
+
+    if (j == 2 | ncores == 1) {
+
+      # search for upper
+      up.vec <- rep(NA, nperm + nburn)
+      formula.tmp <- update(formula,
+                            as.formula(paste0("~ . + offset(", trtname, ".obs * up)")))
+      for (i in 1:(nperm + nburn)) {
+
+        # permute based on runit
+        data.tmp <- permute(data, trtname, runit, strat) # permuted data
+        model.tmp <- survival::coxph(formula = formula.tmp, data = data.tmp) # fit
+        t <- as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
+        tstar <- (obs1 - up) # tx effect estimate from original permutation
+
+        # update using Robbins-Monro step
+        ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
+        up <- update_rm(init = up, thetahat = obs1, t, tstar, alpha, ii,
+                        bound = "upper", ...)
+        data.tmp$up <- up
+        up.vec[i] <- up
+
+        if (ncores == 1 & !quietly & i %in% seq(ceiling((nperm + nburn) / 10), (nperm + nburn),
+                                                ceiling((nperm + nburn) / 10)))
           cat(i, "of", (nperm + nburn), "permutations complete\n")
       }
       if (ncores == 1 & !quietly) cat("upper bound complete\n")
