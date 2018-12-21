@@ -19,6 +19,8 @@
 #'   \code{\link[icenReg]{ic_sp}}
 #'   \item \code{permci_survival::survreg}: randomization CI based on
 #'   \code{\link[survival]{survival::survreg}}
+#'   \item \code{permci_coxph}: randomization CI based on
+#'   \code{\link[survival]{coxph}}
 #' }
 #' To ensure correct specification of the parameters passed to the models above
 #' (e.g. \code{formula} in \code{\link[icenReg]{ic_sp}}), please refer to their
@@ -28,10 +30,10 @@
 #' @param level two-sided confidence level (e.g. level = 0.95 for 95\% CI)
 #' @param init vector of initial values for CI, with lower bound as
 #' first element and upper bound as second. If \code{init} not provided,
-#' initial bounds are based on asymptotic approximations.
+#' initial bounds are based on \code{initmethod}.
 #' @param initmethod character; indicates the method to be used for initial
-#' values for CI. If "asymp" (default), initial bounds are based on asymptotic
-#' approximation (e.g. Wald CI for GLM). If "perm", initial bounds are based
+#' values for CI. If "asymp", initial bounds are based on asymptotic
+#' approximation (e.g. Wald CI for GLM). If "perm" (default), initial bounds are based
 #' on the permutation approach used in Garthwaite (1996) with \eqn{\hat{\theta}
 #' \pm \{(t_2 - t_1)/2\}}, where \eqn{t_1} and \eqn{t_2} denote the second
 #' smallest and second largest estimates from the permutation test.
@@ -41,8 +43,8 @@
 #' at latest estimates from ``burn-in'' phase and run for another \code{nperm}
 #' permutations until the final CI estimates are reached. Increasing
 #' \code{nburn} may help convergence if \code{init} CI bounds are poor.
-#' @param ncores number of cores to use for computation. If ncores > 1, lower
-#' and upper bound search procedures run in parallel.
+#' @param ncores number of cores to use for computation. If \code{ncores} > 1,
+#' lower and upper bound search procedures run in parallel across 2 cores.
 #' @param quietly logical; if TRUE (and if ncores == 1), status updates will be
 #' printed to Console otherwise, suppress updates.
 #' @param ... optional arguments to \code{\link[permuter]{update_rm}}, e.g.
@@ -53,12 +55,15 @@
 #' @export
 permci_glm <- function(formula, trtname, runit, strat = NULL,
                        family = gaussian, data, nperm = 1000, nburn = 0,
-                       level = 0.95, init, initmethod = 'asymp',
-                       quietly = F, ncores = 1, seed, ...) {
+                       level = 0.95, init, initmethod = 'perm',
+                       ncores = 1, seed, quietly = F, ...) {
   if (ncores > 1) {
     doParallel::registerDoParallel(cores = ncores)
     if (!missing(seed))
       doRNG::registerDoRNG(seed)
+  } else {
+    if (!missing(seed))
+      set.seed(seed)
   }
 
   data[, paste0(trtname, ".obs")] <- data[, trtname] # obs trt for offset
@@ -189,12 +194,15 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
 #' @export
 permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
                          nperm = 1000, nburn = 0,
-                         level = 0.95, init, initmethod = 'asymp',
-                         quietly = F, ncores = 1, seed, ...) {
+                         level = 0.95, init, initmethod = 'perm',
+                         ncores = 1, seed, quietly = F, ...) {
   if (ncores > 1) {
     doParallel::registerDoParallel(cores = ncores)
     if (!missing(seed))
       doRNG::registerDoRNG(seed)
+  } else {
+    if (!missing(seed))
+      set.seed(seed)
   }
 
   data[, paste0(trtname, ".obs")] <- data[, trtname] # obs trt for offset
@@ -329,12 +337,15 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
 #' @export
 permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
                            dist = "weibull", nperm = 1000, nburn = 0,
-                           level = 0.95, init, initmethod = 'asymp',
-                           quietly = F, ncores = 1, seed, ...) {
+                           level = 0.95, init, initmethod = 'perm',
+                           ncores = 1, seed, quietly = F, ...) {
   if (ncores > 1) {
     doParallel::registerDoParallel(cores = ncores)
     if (!missing(seed))
       doRNG::registerDoRNG(seed)
+  } else {
+    if (!missing(seed))
+      set.seed(seed)
   }
 
   data[, paste0(trtname, ".obs")] <- data[, trtname] # obs trt for offset
@@ -464,12 +475,15 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
 #' @export
 permci_coxph <- function(formula, trtname, runit, strat = NULL, data,
                            nperm = 1000, nburn = 0,
-                           level = 0.95, init, initmethod = 'asymp',
-                           quietly = F, ncores = 1, seed, ...) {
+                           level = 0.95, init, initmethod = 'perm',
+                           ncores = 1, seed, quietly = F, ...) {
   if (ncores > 1) {
     doParallel::registerDoParallel(cores = ncores)
     if (!missing(seed))
       doRNG::registerDoRNG(seed)
+  } else {
+    if (!missing(seed))
+      set.seed(seed)
   }
 
   data[, paste0(trtname, ".obs")] <- data[, trtname] # obs trt for offset
