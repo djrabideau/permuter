@@ -46,6 +46,7 @@
 #' "exponential", "gaussian", "logistic","lognormal" and "loglogistic".
 #' Otherwise, it is assumed to be a user defined list conforming to the format
 #' described in \code{\link[survival]{survreg.distributions}}.
+#' @import stats
 #' @importFrom foreach %dopar%
 #' @importFrom doRNG %dorng%
 #' @importFrom survival Surv

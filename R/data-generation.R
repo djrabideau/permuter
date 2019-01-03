@@ -84,8 +84,7 @@ gendata_crt <- function(family = gaussian, nclus, size, theta = 0,
   if (is.function(family))
     family <- family()
   if (is.null(family$family)) {
-        print(family)
-        stop("family not recognized")
+        stop(paste0("family '", family, "' not recognized"))
   }
   y.mean <- family$linkinv(mymu + myalpha + trt * theta)
   if (family$family == "gaussian") {
@@ -95,8 +94,7 @@ gendata_crt <- function(family = gaussian, nclus, size, theta = 0,
   } else if (family$family == "poisson") {
     y <- rpois(ntot, y.mean)
   } else {
-    print(family)
-    stop("family not yet supported by this function")
+    stop(paste0("family '", family$family, "' not supported by gendata_crt"))
   }
 
   out <- data.frame(unique.id, clusid, id, trt, y)

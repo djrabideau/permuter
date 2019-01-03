@@ -108,7 +108,7 @@ corrrespond to different regression models:
   \item \code{permci_ic_sp}: randomization CI based on
   \code{\link[icenReg]{ic_sp}}
   \item \code{permci_survival::survreg}: randomization CI based on
-  \code{\link[survival]{survival::survreg}}
+  \code{\link[survival]{survreg}}
   \item \code{permci_coxph}: randomization CI based on
   \code{\link[survival]{coxph}}
 }
