@@ -1,0 +1,30 @@
+#' Pneumococcal Conjugate Vaccine Trial
+#'
+#' The Pneumococcal Conjugate Vaccine Trial was a cluster randomized trial
+#' carried out from 1997 to 2000 to assess the safety and efficacy of a
+#' seven-valent conjugate pneumococcal vaccine (O'Brien et al., 2003). The
+#' study population was Navajo and White Mountain Apache children younger
+#' than 2 years, a group with one of the highest documented rates of invasive
+#' pneumococcal disease in the world at that time. A total of 38 geographic
+#' areas were randomized: 19 areas were offered pneumococcal vaccine and 19
+#' were offered a comparator (meningococcal vaccine). These data, made available
+#' by Hayes and Moulton (2017) on Harvard Dataverse, include a
+#' random subsample of 449 children drawn from the original 8,292 trial
+#' participants.
+#'
+#' @format A data frame with 449 observations and 4 variables:
+#' \describe{
+#'     \item{randunit}{numeric, distinct for each randomised geographic area}
+#'     \item{bpepisodes}{number of bacterial pneumonia episodes}
+#'     \item{spnvac}{test vaccine: 0=meningococcal comparator, 1=pneumococcal vaccine}
+#'     \item{fakeid}{recoded individual participant id}
+#' }
+#' @source \url{https://dataverse.harvard.edu/dataverse/crt}
+#'
+#' Hayes, R. J. and Moulton, L. H. (2017). Cluster Randomised Trials 2nd
+#' edition. New York: Chapman and Hall/CRC.
+#'
+#' O'Brien, K. L. et al. (2003). Efficacy and safety of seven-valent conjugate
+#' pneumococcal vaccine in American Indian children: group randomised trial.
+#' Lancet 362, 355--361.
+"pneumovac"

@@ -5,9 +5,9 @@ Version: 0.0.0.9000
 Authors@R: person("Dustin", "Rabideau", email = "djrabideau@g.harvard.edu",
     role = c("aut", "cre"))
 Description: This package contains functions to carry out randomization tests 
-    and corresponding confidence intervals (CI) for different types of outcomes 
-    (e.g. continuous, binary, count, time-to-event) and study designs 
-    (e.g. parallel, crossover, stepped wedge).
+    and corresponding confidence intervals (CI) for different types of 
+    individual-level outcome (e.g. continuous, binary, count) or randomization 
+    scheme (e.g. simple, restricted).
 Depends: R (>= 3.4.1)
 License: MIT + file LICENSE
 Encoding: UTF-8
@@ -21,4 +21,7 @@ Imports:
     stats,
     survival
 RoxygenNote: 6.1.1
-Suggests: testthat
+Suggests: testthat,
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr

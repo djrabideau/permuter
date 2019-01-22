@@ -52,8 +52,8 @@
 #' @importFrom survival Surv
 #' @export
 permtest_glm <- function(formula, trtname, runit, strat = NULL,
-                         family = gaussian, data, nperm = 999, ncores = 1,
-                         seed, quietly = F) {
+                         family = gaussian, data, nperm = 1000, ncores = 1,
+                         seed, quietly = T) {
   if (ncores > 1) {
   doParallel::registerDoParallel(cores = ncores)
   if (!missing(seed))
@@ -67,10 +67,8 @@ permtest_glm <- function(formula, trtname, runit, strat = NULL,
   m1 <- glm(formula = formula, family = family, data = data)
   obs1 <- as.numeric(coef(m1)[trtname])
 
-  perm.stat <- rep(0, nperm)
-
   # permute based on runit
-  perm.stat <- foreach::foreach(i = 1:nperm, .combine = c) %dopar% {
+  perm.stat <- foreach::foreach(i = 2:nperm, .combine = c) %dopar% {
     data.tmp <- permute(data, trtname, runit, strat) # permuted data
     model.tmp <- glm(formula = formula, family = family, data = data.tmp) # fit
     if (ncores == 1 & !quietly & i %in% seq(ceiling(nperm / 10), nperm,
@@ -93,7 +91,7 @@ permtest_glm <- function(formula, trtname, runit, strat = NULL,
 #' @rdname permtest_glm
 #' @export
 permtest_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
-                           nperm = 999, ncores = 1, seed, quietly = F) {
+                           nperm = 1000, ncores = 1, seed, quietly = T) {
   if (ncores > 1) {
     doParallel::registerDoParallel(cores = ncores)
     if (!missing(seed))
@@ -107,10 +105,8 @@ permtest_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
   m1 <- icenReg::ic_sp(formula = formula, data = data)
   obs1 <- as.numeric(coef(m1)[trtname])
 
-  perm.stat <- rep(0, nperm)
-
   # permute based on runit
-  perm.stat <- foreach::foreach(i = 1:nperm, .combine = c) %dopar% {
+  perm.stat <- foreach::foreach(i = 2:nperm, .combine = c) %dopar% {
     data.tmp <- permute(data, trtname, runit, strat) # permuted data
     model.tmp <- icenReg::ic_sp(formula = formula, data = data.tmp) # fit
 
@@ -133,8 +129,8 @@ permtest_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
 #' @rdname permtest_glm
 #' @export
 permtest_survreg <- function(formula, trtname, runit, strat = NULL, data,
-                             dist = "weibull", nperm = 999, ncores = 1,
-                             seed, quietly = F) {
+                             dist = "weibull", nperm = 1000, ncores = 1,
+                             seed, quietly = T) {
   if (ncores > 1) {
     doParallel::registerDoParallel(cores = ncores)
     if (!missing(seed))
@@ -148,10 +144,8 @@ permtest_survreg <- function(formula, trtname, runit, strat = NULL, data,
   m1 <- survival::survreg(formula = formula, data = data, dist = dist)
   obs1 <- as.numeric(coef(m1)[trtname])
 
-  perm.stat <- rep(0, nperm)
-
   # permute based on runit
-  perm.stat <- foreach::foreach(i = 1:nperm, .combine = c) %dopar% {
+  perm.stat <- foreach::foreach(i = 2:nperm, .combine = c) %dopar% {
     data.tmp <- permute(data, trtname, runit, strat) # permuted data
     model.tmp <- survival::survreg(formula = formula, data = data.tmp,
                                    dist = dist) # fit
@@ -175,7 +169,7 @@ permtest_survreg <- function(formula, trtname, runit, strat = NULL, data,
 #' @rdname permtest_glm
 #' @export
 permtest_coxph <- function(formula, trtname, runit, strat = NULL, data,
-                             nperm = 999, ncores = 1, seed, quietly = F) {
+                             nperm = 1000, ncores = 1, seed, quietly = T) {
   if (ncores > 1) {
     doParallel::registerDoParallel(cores = ncores)
     if (!missing(seed))
@@ -189,10 +183,8 @@ permtest_coxph <- function(formula, trtname, runit, strat = NULL, data,
   m1 <- survival::coxph(formula = formula, data = data)
   obs1 <- as.numeric(coef(m1)[trtname])
 
-  perm.stat <- rep(0, nperm)
-
   # permute based on runit
-  perm.stat <- foreach::foreach(i = 1:nperm, .combine = c) %dopar% {
+  perm.stat <- foreach::foreach(i = 2:nperm, .combine = c) %dopar% {
     data.tmp <- permute(data, trtname, runit, strat) # permuted data
     model.tmp <- survival::coxph(formula = formula, data = data.tmp) # fit
 

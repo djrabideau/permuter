@@ -8,16 +8,16 @@
 \title{Randomization test for regression}
 \usage{
 permtest_glm(formula, trtname, runit, strat = NULL, family = gaussian,
-  data, nperm = 999, ncores = 1, seed, quietly = F)
+  data, nperm = 1000, ncores = 1, seed, quietly = T)
 
 permtest_ic_sp(formula, trtname, runit, strat = NULL, data,
-  nperm = 999, ncores = 1, seed, quietly = F)
+  nperm = 1000, ncores = 1, seed, quietly = T)
 
 permtest_survreg(formula, trtname, runit, strat = NULL, data,
-  dist = "weibull", nperm = 999, ncores = 1, seed, quietly = F)
+  dist = "weibull", nperm = 1000, ncores = 1, seed, quietly = T)
 
 permtest_coxph(formula, trtname, runit, strat = NULL, data,
-  nperm = 999, ncores = 1, seed, quietly = F)
+  nperm = 1000, ncores = 1, seed, quietly = T)
 }
 \arguments{
 \item{formula}{an object of class "\code{\link[stats]{formula}}"
