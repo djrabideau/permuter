@@ -20,11 +20,11 @@ The **permuter** package was developed to carry out randomization inference for 
 
 ## Introduction
 The **permuter** package contains various functions to calculate p-values and confidence intervals (CIs) for common regression models using randomization (or randomization-based, permutation) inference. For example, `permtest_glm` and `permci_glm` correspond to `stats::glm`; `permtest_coxph` and `permci_coxph` correspond to `survival::coxph`. Much of the syntax and arguments are kept consistent between the randomization-based functions and their counterparts. For example, to fit a simple logistic regression model, we could use
-```{r, eval = F}
+```{r, intro1, eval = F}
 glm(outcome ~ exposure, family = binomial, data = ds)
 ```
 To carry out randomization inference for this model, we instead use
-```{r, eval = F}
+```{r, intro2, eval = F}
 permtest_glm(outcome ~ exposure, family = binomial, data = ds, ...)
 permci_glm(outcome ~ exposure, family = binomial, data = ds, ...)
 ```
@@ -34,14 +34,14 @@ There are a few necessary (and other optional) arguments in `...` that we specif
 The Pneumococcal Conjugate Vaccine Trial was a cluster randomized trial carried out from 1997 to 2000 to assess the safety and efficacy of a seven-valent conjugate pneumococcal vaccine (O'Brien et al., 2003). The study population was Navajo and White Mountain Apache children younger than 2 years, a group with one of the highest documented rates of invasive pneumococcal disease in the world at that time. A total of 38 geographic areas were randomized: 19 areas were offered pneumococcal vaccine and 19 were offered a comparator (meningococcal vaccine). One individual-level outcome measured during the trial was the total number of bacterial pneumonia episodes experienced by each child during follow-up. We will analyze this count outcome for a random subsample of 449 children drawn from the original 8,292 trial participants (Hayes and Moulton, 2017). These data are available in the **permuter** package and [here](https://dataverse.harvard.edu/dataverse/crt) on Harvard Dataverse.
 
 The `pneumovac` data frame contains columns for the individual-level count outcome (`bpepisodes`), an indicator of randomization to the pneumococcal vaccine (`spnvac`), and a distinct identifier for each geographic area (`randunit`) and individual (`fakeid`). 
-```{r}
+```{r, data}
 library(permuter)
 head(pneumovac)
 ```
 
 #### Randomization test
 Let's use randomization inference to determine whether there was a difference in the rate of bacterial pneumonia episodes between the two intervention groups. The test statistic we will use is the estimated log incidence rate ratio (IRR) from a Poisson generalized linear model (GLM). Let's calculate the p-value based on 1,000 permutations. To carry out this randomization test, we'll use the `permtest_glm` function in the **permuter** package.
-```{r, warning = F}
+```{r, ptest, warning = F}
 test <- permtest_glm(formula = bpepisodes ~ spnvac, 
                      trtname = 'spnvac', runit = 'randunit', family = poisson, 
                      data = pneumovac, nperm = 1000, ncores = 1, seed = 444)
@@ -54,7 +54,7 @@ We get an estimated IRR of 0.64 (logIRR = -0.45) with a p-value of 0.078.
 
 #### Randomization-based CI
 Now, let's get the corresponding randomization-based 95% CI using `permci_glm`:
-```{r, warning = F}
+```{r, pci, warning = F, message = F}
 ci <- permci_glm(formula = bpepisodes ~ spnvac, 
                  trtname = 'spnvac', runit = 'randunit', family = poisson, 
                  data = pneumovac, nperm = 1000, ncores = 2, seed = 445,

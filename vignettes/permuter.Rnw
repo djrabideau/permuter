@@ -1,0 +1,643 @@
+\documentclass[12pt]{article}
+
+\usepackage{fullpage,amsmath,amsthm,framed,fancyhdr,amsfonts,graphicx,color,titlesec,enumitem,rotating,hyperref}
+\usepackage[margin=1in]{geometry}
+\usepackage[labelfont=bf,labelsep=period]{caption}
+
+%%%%% PLACE YOUR OWN MACROS HERE %%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  Bold Digits           %
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%
+\def\bzero{{\bf 0}}
+\def\bone{{\bf 1}}
+%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  Bold Roman Letters    %
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%
+\def\ba{{\mbox{\bmath$a$}}}
+\def\bb{{\bf b}}
+\def\bc{{\bf c}}
+\def\bd{{\bf d}}
+\def\be{{\bf e}}
+\def\bdf{{\bf f}}
+\def\bg{{\mbox{\bmath$g$}}}
+\def\bh{{\bf h}}
+\def\bi{{\bf i}}
+\def\bj{{\bf j}}
+\def\bk{{\bf k}}
+\def\bl{{\bf l}}
+\def\bm{{\bf m}}
+\def\bn{{\bf n}}
+\def\bo{{\bf o}}
+\def\bp{{\bf p}}
+\def\bq{{\bf q}}
+\def\br{{\bf r}}
+\def\bs{{\bf s}}
+\def\bt{{\bf t}}
+\def\bu{{\bf u}}
+\def\bv{{\bf v}}
+\def\bw{{\bf w}}
+\def\bx{{\bf x}}
+\def\by{{\bf y}}
+\def\bz{{\bf z}}
+\def\bA{{\bf A}}
+\def\bB{{\bf B}}
+\def\bC{{\bf C}}
+\def\bD{{\bf D}}
+\def\bE{{\bf E}}
+\def\bF{{\bf F}}
+\def\bG{{\bf G}}
+\def\bH{{\bf H}}
+\def\bI{{\bf I}}
+\def\bJ{{\bf J}}
+\def\bK{{\bf K}}
+\def\bL{{\bf L}}
+\def\bM{{\bf M}}
+\def\bN{{\bf N}}
+\def\bO{{\bf O}}
+\def\bP{{\bf P}}
+\def\bQ{{\bf Q}}
+\def\bR{{\bf R}}
+\def\bS{{\bf S}}
+\def\bT{{\bf T}}
+\def\bU{{\bf U}}
+\def\bV{{\bf V}}
+\def\bW{{\bf W}}
+\def\bX{{\bf X}}
+\def\bY{{\bf Y}}
+\def\bZ{{\bf Z}}
+\def\smbZ{\scriptstyle{\bf Z}}
+\def\smM{\scriptstyle{M}}
+\def\smN{\scriptstyle{N}}
+\def\smbT{\scriptstyle{\bf T}}
+%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  Bold Greek Letters    %
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%
+\def\thick#1{\hbox{\rlap{$#1$}\kern0.25pt\rlap{$#1$}\kern0.25pt$#1$}}
+\def\balpha{\bmath{\alpha}}
+\def\bbeta{\bmath{\beta}}
+\def\bgamma{\bmath{\gamma}}
+\def\bdelta{\bmath{\delta}}
+\def\bepsilon{\bmath{\epsilon}}
+\def\bvarepsilon{\bmath{\varepsilon}}
+\def\bzeta{\bmath{\zeta}}
+\def\bdeta{\bmath{\eta}}
+\def\btheta{\bmath{\theta}}
+\def\biota{\bmath{\iota}}
+\def\bkappa{\bmath{\kappa}}
+\def\blambda{\bmath{\lambda}}
+\def\bmu{\bmath{\mu}}
+\def\bnu{\bmath{\nu}}
+\def\bxi{\bmath{\xi}}
+\def\bomicron{\bmath{\omicron}}
+\def\bpi{\bmath{\pi}}
+\def\brho{\bmath{\rho}}
+\def\bsigma{\bmath{\sigma}}
+\def\btau{\bmath{\tau}}
+\def\bupsilon{\bmath{\upsilon}}
+\def\bphi{\bmath{\phi}}
+\def\bchi{\bmath{\chi}}
+\def\bpsi{\bmath{\psi}}
+\def\bomega{\bmath{\omega}}
+\def\bAlpha{\bmath{\Alpha}}
+\def\bBeta{\bmath{\Beta}}
+\def\bGamma{\bmath{\Gamma}}
+\def\bDelta{\bmath{\Delta}}
+\def\bEpsilon{\bmath{\Epsilon}}
+\def\bZeta{\bmath{\Zeta}}
+\def\bEta{\bmath{\Eta}}
+\def\bTheta{\bmath{\Theta}}
+\def\bIota{\bmath{\Iota}}
+\def\bKappa{\bmath{\Kappa}}
+\def\bLambda{{\bmath{\Lambda}}}
+\def\bMu{\bmath{\Mu}}
+\def\bNu{\bmath{\Nu}}
+\def\bXi{\bmath{\Xi}}
+\def\bOmicron{\bmath{\Omicron}}
+\def\bPi{\bmath{\Pi}}
+\def\bRho{\bmath{\Rho}}
+\def\bSigma{\bmath{\Sigma}}
+\def\bTau{\bmath{\Tau}}
+\def\bUpsilon{\bmath{\Upsilon}}
+\def\bPhi{\bmath{\Phi}}
+\def\bChi{\bmath{\Chi}}
+\def\bPsi{\bmath{\Psi}}
+\def\bOmega{\bmath{\Omega}}
+
+%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  Hatted Roman Letters  %
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%
+\def\ahat{{\widehat a}}
+\def\bhat{{\widehat b}}
+\def\chat{{\widehat c}}
+\def\dhat{{\widehat d}}
+\def\ehat{{\widehat e}}
+\def\fhat{{\widehat f}}
+\def\ghat{{\widehat g}}
+\def\hhat{{\widehat h}}
+\def\ihat{{\widehat i}}
+\def\jhat{{\widehat j}}
+\def\khat{{\widehat k}}
+\def\lhat{{\widehat l}}
+\def\mhat{{\widehat m}}
+\def\nhat{{\widehat n}}
+\def\ohat{{\widehat o}}
+\def\phat{{\widehat p}}
+\def\qhat{{\widehat q}}
+\def\rhat{{\widehat r}}
+\def\shat{{\widehat s}}
+\def\that{{\widehat t}}
+\def\uhat{{\widehat u}}
+\def\vhat{{\widehat v}}
+\def\what{{\widehat w}}
+\def\xhat{{\widehat x}}
+\def\yhat{{\widehat y}}
+\def\zhat{{\widehat z}}
+\def\Ahat{{\widehat A}}
+\def\Bhat{{\widehat B}}
+\def\Chat{{\widehat C}}
+\def\Dhat{{\widehat D}}
+\def\Ehat{{\widehat E}}
+\def\Fhat{{\widehat F}}
+\def\Ghat{{\widehat G}}
+\def\Hhat{{\widehat H}}
+\def\Ihat{{\widehat I}}
+\def\Jhat{{\widehat J}}
+\def\Khat{{\widehat K}}
+\def\Lhat{{\widehat L}}
+\def\Mhat{{\widehat M}}
+\def\Nhat{{\widehat N}}
+\def\Ohat{{\widehat O}}
+\def\Phat{{\widehat P}}
+\def\Qhat{{\widehat Q}}
+\def\Rhat{{\widehat R}}
+\def\Shat{{\widehat S}}
+\def\That{{\widehat T}}
+\def\Uhat{{\widehat U}}
+\def\Vhat{{\widehat V}}
+\def\What{{\widehat W}}
+\def\Xhat{{\widehat X}}
+\def\Yhat{{\widehat Y}}
+\def\Zhat{{\widehat Z}}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  Tilded Roman Letters  %
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%
+\def\atilde{{\widetilde a}}
+\def\btilde{{\widetilde b}}
+\def\ctilde{{\widetilde c}}
+\def\dtilde{{\widetilde d}}
+\def\etilde{{\widetilde e}}
+\def\ftilde{{\widetilde f}}
+\def\gtilde{{\widetilde g}}
+\def\htilde{{\widetilde h}}
+\def\itilde{{\widetilde i}}
+\def\jtilde{{\widetilde j}}
+\def\ktilde{{\widetilde k}}
+\def\ltilde{{\widetilde l}}
+\def\mtilde{{\widetilde m}}
+\def\ntilde{{\widetilde n}}
+\def\otilde{{\widetilde o}}
+\def\ptilde{{\widetilde p}}
+\def\qtilde{{\widetilde q}}
+\def\rtilde{{\widetilde r}}
+\def\stilde{{\widetilde s}}
+\def\ttilde{{\widetilde t}}
+\def\utilde{{\widetilde u}}
+\def\vtilde{{\widetilde v}}
+\def\wtilde{{\widetilde w}}
+\def\xtilde{{\widetilde x}}
+\def\ytilde{{\widetilde y}}
+\def\ztilde{{\widetilde z}}
+\def\Atilde{{\widetilde A}}
+\def\Btilde{{\widetilde B}}
+\def\Ctilde{{\widetilde C}}
+\def\Dtilde{{\widetilde D}}
+\def\Etilde{{\widetilde E}}
+\def\Ftilde{{\widetilde F}}
+\def\Gtilde{{\widetilde G}}
+\def\Htilde{{\widetilde H}}
+\def\Itilde{{\widetilde I}}
+\def\Jtilde{{\widetilde J}}
+\def\Ktilde{{\widetilde K}}
+\def\Ltilde{{\widetilde L}}
+\def\Mtilde{{\widetilde M}}
+\def\Ntilde{{\widetilde N}}
+\def\Otilde{{\widetilde O}}
+\def\Ptilde{{\widetilde P}}
+\def\Qtilde{{\widetilde Q}}
+\def\Rtilde{{\widetilde R}}
+\def\Stilde{{\widetilde S}}
+\def\Ttilde{{\widetilde T}}
+\def\Utilde{{\widetilde U}}
+\def\Vtilde{{\widetilde V}}
+\def\Wtilde{{\widetilde W}}
+\def\Xtilde{{\widetilde X}}
+\def\Ytilde{{\widetilde Y}}
+\def\Ztilde{{\widetilde Z}}
+
+%
+%
+%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  Hatted Greek Letters  %
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%
+\def\alphahat{{\widehat\alpha}}
+\def\betahat{{\widehat\beta}}
+\def\gammahat{{\widehat\gamma}}
+\def\deltahat{{\widehat\delta}}
+\def\epsilonhat{{\widehat\epsilon}}
+\def\varepsilonhat{{\widehat\varepsilon}}
+\def\zetahat{{\widehat\zeta}}
+\def\etahat{{\widehat\eta}}
+\def\thetahat{{\widehat\theta}}
+\def\iotahat{{\widehat\iota}}
+\def\kappahat{{\widehat\kappa}}
+\def\lambdahat{{\widehat\lambda}}
+\def\muhat{{\widehat\mu}}
+\def\nuhat{{\widehat\nu}}
+\def\xihat{{\widehat\xi}}
+\def\omicronhat{{\widehat\omicron}}
+\def\pihat{{\widehat\pi}}
+\def\rhohat{{\widehat\rho}}
+\def\sigmahat{{\widehat\sigma}}
+\def\tauhat{{\widehat\tau}}
+\def\upsilonhat{{\widehat\upsilon}}
+\def\phihat{{\widehat\phi}}
+\def\chihat{{\widehat\chi}}
+\def\psihat{{\widehat\psi}}
+\def\omegahat{{\widehat\omega}}
+\def\Alphahat{{\widehat\Alpha}}
+\def\Betahat{{\widehat\Beta}}
+\def\Gammahat{{\widehat\Gamma}}
+\def\Deltahat{{\widehat\Delta}}
+\def\Epsilonhat{{\widehat\Epsilon}}
+\def\Zetahat{{\widehat\Zeta}}
+\def\Etahat{{\widehat\Eta}}
+\def\Thetahat{{\widehat\Theta}}
+\def\Iotahat{{\widehat\Iota}}
+\def\Kappahat{{\widehat\Kappa}}
+\def\Lambdahat{{\widehat\Lambda}}
+\def\Muhat{{\widehat\Mu}}
+\def\Nuhat{{\widehat\Nu}}
+\def\Xihat{{\widehat\Xi}}
+\def\Omicronhat{{\widehat\Omicron}}
+\def\Pihat{{\widehat\Pi}}
+\def\Rhohat{{\widehat\Rho}}
+\def\Sigmahat{{\widehat\Sigma}}
+\def\Tauhat{{\widehat\Tau}}
+\def\Upsilonhat{{\widehat\Upsilon}}
+\def\Phihat{{\widehat\Phi}}
+\def\Chihat{{\widehat\Chi}}
+\def\Psihat{{\widehat\Psi}}
+\def\Omegahat{{\widehat\Omega}}
+%
+%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  Tilded Greek Letters  %
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%
+\def\alphatilde{{\widetilde\alpha}}
+\def\betatilde{{\widetilde\beta}}
+\def\gammatilde{{\widetilde\gamma}}
+\def\deltatilde{{\widetilde\delta}}
+\def\epsilontilde{{\widetilde\epsilon}}
+\def\varepsilontilde{{\widetilde\varepsilon}}
+\def\zetatilde{{\widetilde\zeta}}
+\def\etatilde{{\widetilde\eta}}
+\def\thetatilde{{\widetilde\theta}}
+\def\iotatilde{{\widetilde\iota}}
+\def\kappatilde{{\widetilde\kappa}}
+\def\lambdatilde{{\widetilde\lambda}}
+\def\mutilde{{\widetilde\mu}}
+\def\nutilde{{\widetilde\nu}}
+\def\xitilde{{\widetilde\xi}}
+\def\omicrontilde{{\widetilde\omicron}}
+\def\pitilde{{\widetilde\pi}}
+\def\rhotilde{{\widetilde\rho}}
+\def\sigmatilde{{\widetilde\sigma}}
+\def\tautilde{{\widetilde\tau}}
+\def\upsilontilde{{\widetilde\upsilon}}
+\def\phitilde{{\widetilde\phi}}
+\def\chitilde{{\widetilde\chi}}
+\def\psitilde{{\widetilde\psi}}
+\def\omegatilde{{\widetilde\omega}}
+\def\Alphatilde{{\widetilde\Alpha}}
+\def\Betatilde{{\widetilde\Beta}}
+\def\Gammatilde{{\widetilde\Gamma}}
+\def\Deltatilde{{\widetilde\Delta}}
+\def\Epsilontilde{{\widetilde\Epsilon}}
+\def\Zetatilde{{\widetilde\Zeta}}
+\def\Etatilde{{\widetilde\Eta}}
+\def\Thetatilde{{\widetilde\Theta}}
+\def\Iotatilde{{\widetilde\Iota}}
+\def\Kappatilde{{\widetilde\Kappa}}
+\def\Lambdatilde{{\widetilde\Lambda}}
+\def\Mutilde{{\widetilde\Mu}}
+\def\Nutilde{{\widetilde\Nu}}
+\def\Xitilde{{\widetilde\Xi}}
+\def\Omicrontilde{{\widetilde\Omicron}}
+\def\Pitilde{{\widetilde\Pi}}
+\def\Rhotilde{{\widetilde\Rho}}
+\def\Sigmatilde{{\widetilde\Sigma}}
+\def\Tautilde{{\widetilde\Tau}}
+\def\Upsilontilde{{\widetilde\Upsilon}}
+\def\Phitilde{{\widetilde\Phi}}
+\def\Chitilde{{\widetilde\Chi}}
+\def\Psitilde{{\widetilde\Psi}}
+\def\Omegatilde{{\widetilde\Omega}}
+
+\def\transpose{{\sf \scriptscriptstyle{T}}}
+\def\corr{\mbox{corr}}
+\def\cov{\mbox{cov}}
+\def\diag{\mbox{diag}}
+\def\var{\mbox{var}}
+\def\logit{\mbox{logit}}
+\newcommand{\set}[1]{\{#1\}}
+
+\title{Randomization Inference with \textbf{permuter}}
+\author{Dustin J. Rabideau}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+The \textbf{permuter} package was developed to carry out randomization inference for a treatment effect in cluster randomized trials (Rabideau and Wang, 2019). In this vignette, we introduce the package and illustrate some of its functionality
+
+\section{Introduction}
+The \textbf{permuter} package contains various functions to calculate p-values and confidence intervals (CIs) for common regression models using randomization (or randomization-based, permutation) inference. For example, \texttt{permtest\_glm()} and \texttt{permci\_glm()} correspond to \texttt{stats::glm()}; \texttt{permtest\_coxph()} and \texttt{permci\_coxph()} correspond to \texttt{survival::coxph()}. Much of the syntax and arguments are kept consistent between the randomization-based functions and their counterparts. For example, to fit a simple logistic regression model, we could use
+<<intro1, eval = F>>=
+glm(outcome ~ exposure, family = binomial, data = ds)
+@
+To carry out randomization inference for this model, we instead use
+<<intro2, eval = F>>=
+permtest_glm(outcome ~ exposure, family = binomial, data = ds, ...)
+permci_glm(outcome ~ exposure, family = binomial, data = ds, ...)
+@
+There are a few necessary (and other optional) arguments in \texttt{...} that we specify for the randomization-based functions (more on this later), but the basic formulation should be familiar. One optional argument worth mentioning here is \texttt{ncores}, which allows us to carry out randomization inference in parallel across multiple cores using functionality from \href{https://cran.r-project.org/web/packages/doParallel/index.html}{\textbf{doParallel}} and \href{https://cran.r-project.org/web/packages/doRNG/index.html}{\textbf{doRNG}}. E.g. we can specify \texttt{permtest\_glm(..., ncores = 3)} to run the randomization test in parallel across 3 cores.
+
+\section{The Basics}
+Let's learn the basics of using \textbf{permuter} with an example. The Pneumococcal Conjugate Vaccine Trial was a cluster randomized trial carried out from 1997 to 2000 to assess the safety and efficacy of a seven-valent conjugate pneumococcal vaccine (O'Brien et al., 2003). The study population was Navajo and White Mountain Apache children younger than 2 years, a group with one of the highest documented rates of invasive pneumococcal disease in the world at that time. A total of 38 geographic areas were randomized: 19 areas were offered pneumococcal vaccine and 19 were offered a comparator (meningococcal vaccine). One individual-level outcome measured during the trial was the total number of bacterial pneumonia episodes experienced by each child during follow-up. We will analyze this count outcome for a random subsample of 449 children drawn from the original 8,292 trial participants (Hayes and Moulton, 2017). These data are available in the \textbf{permuter} package and \href{https://dataverse.harvard.edu/dataverse/crt}{here} on Harvard Dataverse.
+
+The \texttt{pneumovac} data frame contains columns for the individual-level count outcome (\texttt{bpepisodes}), an indicator of randomization to the pneumococcal vaccine (\texttt{spnvac}), and a distinct identifier for each geographic area (\texttt{randunit}) and individual (\texttt{fakeid}).
+<<pneumovac>>=
+library(permuter)
+head(pneumovac)
+@
+
+\subsection{Randomization Test}
+Let's use randomization inference to determine whether there was a difference in the rate of bacterial pneumonia episodes between the two intervention groups. The test statistic we will use is the estimated log incidence rate ratio (IRR) from a Poisson generalized linear model (GLM). Let's calculate the p-value based on 1,000 permutations. To carry out this randomization test, we'll use the \texttt{permtest\_glm()} function in the \textbf{permuter} package.
+<<ptest, warning = F, cache = T>>=
+test <- permtest_glm(bpepisodes ~ spnvac, trtname = 'spnvac',
+                     runit = 'randunit', family = poisson, data = pneumovac,
+                     nperm = 1000, ncores = 1, seed = 444)
+print(test) # logIRR
+print(exp(test['spnvac'])) # IRR
+@
+The \texttt{formula} (first argument), \texttt{family}, and \texttt{data} arguments are passed to the corresponding regression function, \texttt{stats::glm()}; \texttt{trtname} specifies the column name of the randomized treatment variable and \texttt{runit} specifies the column name of the unit of randomization identifier (e.g. cluster id); \texttt{nperm} specifies the number of permutations used for the Monte Carlo approximation of the exact p-value (Dwass, 1957). To speed up compuation, we could instead specify \texttt{ncores} $>$ 1 to run the randomization test in parallel across multiple cores. Finally, the \texttt{seed} argument is passed to \texttt{set.seed()} (if \texttt{ncores} = 1) or \texttt{doRNG::registerDoRNG()} (if \texttt{ncores} $>$ 1) to make results reproduceable.
+
+We get an estimated IRR of 0.64 (logIRR = -0.45) with a p-value of 0.078.
+
+\subsection{Randomization-Based Confidence Interval}
+Now, let's get the corresponding randomization-based 95\% CI using \texttt{permci\_glm()}:
+<<pci, warning = F, message = F, cache = T>>=
+ci <- permci_glm(bpepisodes ~ spnvac, trtname = 'spnvac',
+                 runit = 'randunit', family = poisson, data = pneumovac,
+                 nperm = 1000, ncores = 2, seed = 445, level = 0.95,
+                 initmethod = 'perm')
+print(ci$ci) # logIRR
+print(exp(ci$ci)) # IRR
+@
+Most of the arguments are the same except the additional specification of the confidence \texttt{level} (95\% here) and \texttt{initmethod}, which specifies the method to obtain initial values for the CI procedure (see \texttt{permci\_glm()} documentation for more detail). The efficient CI procedure used in the \textbf{permuter} package was proposed by Garthwaite (1996) and is based on the Robbins-Monro search process. If \texttt{ncores} $>$ 1 for \texttt{permci\_glm()} (or another CI function), lower and upper bound search procedures run in parallel across two cores (but not more than two).
+
+We get a 95\% CI for the IRR of 0.37 to 1.07 (rounding conservatively).
+
+We can inspect convergence of the CI procedure simply by using \texttt{plot(ci)}:
+<<plot, fig.height = 4, fig.width = 6, fig.align = 'center', echo = F>>=
+plot(ci)
+@
+Note: we've used only 1,000 permutations in this example for convenience. In practice, we'll usually need to increase the number of permutations (e.g. 5,000 or 20,000) to ensure adequate approximation of the exact p-value and convergence of the CI bounds.
+
+\section{Going a Bit Deeper}
+
+\subsection{Stratified Randomization}
+CRTs often employ stratified randomization to improve balance between treatment arms, which can increase the power of the trial. Stratified designs can be accomodated simply by restricting the set of treatment permutations considered. In \textbf{permuter}, this just means including one additional argument, \texttt{strat}, when calling the test or CI function of interest.
+
+To illustrate this, let's consider the Botswana Combination Prevention Project (BCPP), a pair-matched HIV prevention CRT to test whether a combination treatment and prevention intervention could reduce population-level cumulative HIV incidence over 3 years of follow-up. A total of 30 communities were randomized, 15 to each arm. The primary study endpoint was cumulative HIV incidence, measured at scheduled study visits as time to HIV-infection within a cohort of individuals identified as HIV-negative among a 20\% random sample of eligible households at baseline. That is, we have an interval-censored time-to-event outcome for each cohort participant. Since the primary trial results have not yet been published, we use a simulated data set, which was generated to mimic the BCPP by applying an agent-based epidemic model to a dynamic network of simulated sexual partnerships (Goyal, Blitzstein, and De Gruttola, 2013; Wang et al., 2014). These data are also available in the \textbf{permuter} package.
+
+The \texttt{bcpp} data frame contains an indicator for assigment to the intervention arm (\texttt{treat}), a distinct identifier for community (\texttt{group}) and matched pair (\texttt{pair.id}), and two columns representing the interval-censored time-to-event outcome (\texttt{left}, \texttt{right}), measured in weeks.
+<<bcpp>>=
+head(bcpp)
+@
+Let's carry out randomization inference for these data, making sure we restrict the analysis based on the pair-matched design by including \texttt{strat = `pair.id'}. We'll use the estimated treatment effect from an interval-censored Weibull regression model as our test statistic.
+<<bcpp_analysis, cache = T, warning = F>>=
+library(survival)
+test <- permtest_survreg(Surv(left, right, type = 'interval2') ~ treat,
+                         trtname = 'treat', runit = 'group',
+                         strat = 'pair.id', data = bcpp, dist = 'weibull',
+                         nperm = 1000, ncores = 3, seed = 446)
+ci <- permci_survreg(Surv(left, right, type = 'interval2') ~ treat,
+                     trtname = 'treat', runit = 'group',
+                     strat = 'pair.id', data = bcpp, dist = 'weibull',
+                     nperm = 1000, ncores = 2, seed = 447)
+print(test)
+print(ci$ci)
+@
+These results suggest significantly better outcomes (i.e. longer average times to HIV-infection) among those living in communities randomized to the intervention. Note, we didn't explicitly set \texttt{level = 0.95} or \texttt{initmethod = `perm'} this time, but these are the default values. Matching and stratification are just special forms of \textit{restricted} randomization, which is also handled by restricting the set of permutations. We plan to implement this more general functionality in future versions of \textbf{permuter}.
+
+\subsection{Fine-Tuning the Confidence Interval}
+The efficient CI algorithm (Garthwaite, 1996) used in \textbf{permuter} substantially reduces the computational burden of obtaining randomization-based CIs, but its performance may be sensitive to some of the choices that have been made under the hood. For example, one may wish to consider different starting values, restart the algorithm if the starting values seem poor, or modify the magnitude of each step in the algorithm. Let's see how we can fine-tune our CIs in \textbf{permuter}.
+
+Let's generate some data from a CRT with a binary outcome.
+<<simdata>>=
+ds <- gendata_crt(family = binomial, nclus = c(10, 10), size = c(30, 50),
+                  theta = log(1.5), mu = qlogis(0.25), sigma = 0.2)
+dim(ds)
+head(ds)
+@
+We've created a data set with 10 clusters in each study arm, ranging in size from 30 to 50 individuals. Other arguments control the true underlying treatment effect (e.g. an odds ratio of 1.5), the prevalence the outcome in the control group (e.g. 25\%), and the level of between-cluster hetergeneity (see \texttt{gendata\_crt()} documentation for more details).
+
+Let's compute 4 CIs with different sets of starting values: the first based on a small permutation test, the second based on a naive asymptotic CI, and two more specifying the initial values ourselves.
+<<ci_chains, cache = T>>=
+nperm <- 500
+ci1 <- permci_glm(y ~ trt, trtname = 'trt', runit = 'clusid',
+                  family = binomial, data = ds, nperm = nperm, ncores = 2,
+                  seed = 448, initmethod = 'perm')
+ci2 <- permci_glm(y ~ trt, trtname = 'trt', runit = 'clusid',
+                  family = binomial, data = ds, nperm = nperm, ncores = 2,
+                  seed = 449, initmethod = 'asymp')
+ci3 <- permci_glm(y ~ trt, trtname = 'trt', runit = 'clusid',
+                  family = binomial, data = ds, nperm = nperm, ncores = 2,
+                  seed = 450, init = c(-1, 2))
+ci4 <- permci_glm(y ~ trt, trtname = 'trt', runit = 'clusid',
+                  family = binomial, data = ds, nperm = nperm, ncores = 2,
+                  seed = 451, init = c(-2, 3))
+@
+
+<<ci_plots, fig.height = 5, fig.width = 6, fig.align = 'center', echo = F>>=
+cis <- list(ci1, ci2, ci3, ci4)
+xmax <- nrow(ci1$trace)
+ulim <- range(c(ci1$init[2], ci1$trace[, 2], ci2$init[2], ci2$trace[, 2],
+                ci3$init[2], ci3$trace[, 2], ci4$init[2], ci4$trace[, 2]))
+llim <- range(c(ci1$init[1], ci1$trace[, 1], ci2$init[1], ci2$trace[, 1],
+                ci3$init[1], ci3$trace[, 1], ci4$init[1], ci4$trace[, 1]))
+par(mfrow = c(2, 1), mar = c(2, 4, 1, 2) + 0.1, oma = c(2, 0, 0, 0))
+plot(ci1$trace[, 2], type = 'n', las = 1, ylab = 'Upper', ylim = ulim)
+for (i in seq_along(cis)) {
+  tmp <- cis[[i]]
+  trace <- c(tmp$init[2], tmp$trace[1:xmax, 2])
+  lines(0:xmax, trace, col = i)
+  points(c(0, xmax), c(tmp$init[2], tmp$trace[xmax, 2]), pch = c(4, 1), lwd = 2, col = i)
+}
+plot(ci1$trace[, 1], type = 'l', las = 1, ylab = 'Lower', ylim = llim)
+for (i in seq_along(cis)) {
+  tmp <- cis[[i]]
+  trace <- c(tmp$init[1], tmp$trace[1:xmax, 1])
+  lines(0:xmax, trace, col = i)
+  points(c(0, xmax), c(tmp$init[1], tmp$trace[xmax, 1]), pch = c(4, 1), lwd = 2, col = i)
+}
+legend('bottom', legend = c('initial', 'final', 'ci1', 'ci2', 'ci3', 'ci4'),
+       pch = c(4, 1, NA, NA, NA, NA), pt.lwd = 2, lty = c(NA, NA, 1, 1, 1, 1),
+       col = c(1, 1, 1, 2, 3, 4), bty = 'n', ncol = 6, cex = 0.7, lwd = 2)
+mtext('Number of Permutations', 1, line = 2.5)
+par(mfrow = c(1, 1), mar = c(5, 4, 4, 2) + 0.1, oma = rep(0, 4)) # reset par
+@
+We see that \texttt{ci4} resulted in the widest CI, suggesting this search was sensitive to the wide starting values. Increasing the number of permutations may mitigate this sensitivity.
+
+Another approach we could use to combat poor starting values is restarting the algorithm after a fixed number of permutations. Since the magnitude of the steps gets smaller as the search proceeds, it may take a large number of permutations to recover from bad starting values. Using a ``burn-in'' phase can speed up this recovery. Let's consider the same 4 sets of starting values as before, but now specify the additional argument \texttt{nburn = `100'}.
+<<ci_burn, cache = T, echo = F>>=
+nburn <- 100
+ci5 <- permci_glm(y ~ trt, trtname = 'trt', runit = 'clusid',
+                  family = binomial, data = ds, nperm = nperm, ncores = 2,
+                  seed = 448, initmethod = 'perm', nburn = nburn)
+ci6 <- permci_glm(y ~ trt, trtname = 'trt', runit = 'clusid',
+                  family = binomial, data = ds, nperm = nperm, ncores = 2,
+                  seed = 449, initmethod = 'asymp', nburn = nburn)
+ci7 <- permci_glm(y ~ trt, trtname = 'trt', runit = 'clusid',
+                  family = binomial, data = ds, nperm = nperm, ncores = 2,
+                  seed = 450, init = c(-1, 2), nburn = nburn)
+ci8 <- permci_glm(y ~ trt, trtname = 'trt', runit = 'clusid',
+                  family = binomial, data = ds, nperm = nperm, ncores = 2,
+                  seed = 451, init = c(-2, 3), nburn = nburn)
+@
+
+<<ci_plots2, fig.height = 5, fig.width = 6, fig.align = 'center', echo = F>>=
+cis <- list(ci5, ci6, ci7, ci8)
+xmax <- nrow(ci5$trace)
+ulim <- range(c(ci5$init[2], ci5$trace[, 2], ci6$init[2], ci6$trace[, 2],
+                ci7$init[2], ci7$trace[, 2], ci8$init[2], ci8$trace[, 2]))
+llim <- range(c(ci5$init[1], ci5$trace[, 1], ci6$init[1], ci6$trace[, 1],
+                ci7$init[1], ci7$trace[, 1], ci8$init[1], ci8$trace[, 1]))
+nb <- eval(ci5$call$nburn)
+par(mfrow = c(2, 1), mar = c(2, 4, 1, 2) + 0.1, oma = c(2, 0, 0, 0))
+plot(ci5$trace[, 2], type = 'n', las = 1, ylab = 'Upper', ylim = ulim)
+for (i in seq_along(cis)) {
+  tmp <- cis[[i]]
+  burn <- c(tmp$init[2], tmp$trace[1:nb, 2])
+  lines(0:nb, burn, col = i, lty = 3)
+  lines(nb:xmax, tmp$trace[nb:xmax, 2], col = i)
+  points(c(0, xmax), c(tmp$init[2], tmp$trace[xmax, 2]), pch = c(4, 1), lwd = 2, col = i)
+}
+plot(ci5$trace[, 1], type = 'n', las = 1, ylab = 'Lower', ylim = llim)
+for (i in seq_along(cis)) {
+  tmp <- cis[[i]]
+  burn <- c(tmp$init[1], tmp$trace[1:nb, 1])
+  lines(0:nb, burn, col = i, lty = 3)
+  lines(nb:xmax, tmp$trace[nb:xmax, 1], col = i)
+  points(c(0, xmax), c(tmp$init[1], tmp$trace[xmax, 1]), pch = c(4, 1), lwd = 2, col = i)
+}
+legend('bottom', legend = c('initial', 'final', 'ci1', 'ci2', 'ci3', 'ci4'),
+       pch = c(4, 1, NA, NA, NA, NA), pt.lwd = 2, lty = c(NA, NA, 1, 1, 1, 1),
+       col = c(1, 1, 1, 2, 3, 4), bty = 'n', ncol = 6, cex = 0.7, lwd = 2)
+mtext('Number of Permutations', 1, line = 2.5)
+par(mfrow = c(1, 1), mar = c(5, 4, 4, 2) + 0.1, oma = rep(0, 4)) # reset par
+@
+Comparing back to the plot without the burn-in permutations, our final estimates are much less sensitive to the poor initial values of \texttt{ci3} and \texttt{ci4}.
+
+We can go even deeper by modifying the Robbins-Monro search proccess itself. For example, we can specify \texttt{permci\_glm(..., m = 1)} to set the largest initial step magnitude (the magnitude is inversely proportional to \texttt{m}). This is yet another approach that may speed up convergence if we choose poor starting values, but could introduce problems if the first few steps happen to jump even further away from the true bounds.
+<<ci_chains3, cache = T, echo = F>>=
+nperm <- 500
+ci9 <- permci_glm(y ~ trt, trtname = 'trt', runit = 'clusid',
+                  family = binomial, data = ds, nperm = nperm, ncores = 2,
+                  seed = 448, initmethod = 'perm', m = 1)
+ci10 <- permci_glm(y ~ trt, trtname = 'trt', runit = 'clusid',
+                  family = binomial, data = ds, nperm = nperm, ncores = 2,
+                  seed = 449, initmethod = 'asymp', m = 1)
+ci11 <- permci_glm(y ~ trt, trtname = 'trt', runit = 'clusid',
+                  family = binomial, data = ds, nperm = nperm, ncores = 2,
+                  seed = 450, init = c(-1, 2), m = 1)
+ci12 <- permci_glm(y ~ trt, trtname = 'trt', runit = 'clusid',
+                  family = binomial, data = ds, nperm = nperm, ncores = 2,
+                  seed = 451, init = c(-2, 3), m = 1)
+@
+
+<<ci_plots3, fig.height = 5, fig.width = 6, fig.align = 'center', echo = F>>=
+cis <- list(ci9, ci10, ci11, ci12)
+xmax <- nrow(ci9$trace)
+ulim <- range(c(ci9$init[2], ci9$trace[, 2], ci10$init[2], ci10$trace[, 2],
+                ci11$init[2], ci11$trace[, 2], ci12$init[2], ci12$trace[, 2]))
+llim <- range(c(ci9$init[1], ci9$trace[, 1], ci10$init[1], ci10$trace[, 1],
+                ci11$init[1], ci11$trace[, 1], ci12$init[1], ci12$trace[, 1]))
+par(mfrow = c(2, 1), mar = c(2, 4, 1, 2) + 0.1, oma = c(2, 0, 0, 0))
+plot(ci1$trace[, 2], type = 'n', las = 1, ylab = 'Upper', ylim = ulim)
+for (i in seq_along(cis)) {
+  tmp <- cis[[i]]
+  trace <- c(tmp$init[2], tmp$trace[1:xmax, 2])
+  lines(0:xmax, trace, col = i)
+  points(c(0, xmax), c(tmp$init[2], tmp$trace[xmax, 2]), pch = c(4, 1), lwd = 2, col = i)
+}
+plot(ci1$trace[, 1], type = 'l', las = 1, ylab = 'Lower', ylim = llim)
+for (i in seq_along(cis)) {
+  tmp <- cis[[i]]
+  trace <- c(tmp$init[1], tmp$trace[1:xmax, 1])
+  lines(0:xmax, trace, col = i)
+  points(c(0, xmax), c(tmp$init[1], tmp$trace[xmax, 1]), pch = c(4, 1), lwd = 2, col = i)
+}
+legend('bottom', legend = c('initial', 'final', 'ci1', 'ci2', 'ci3', 'ci4'),
+       pch = c(4, 1, NA, NA, NA, NA), pt.lwd = 2, lty = c(NA, NA, 1, 1, 1, 1),
+       col = c(1, 1, 1, 2, 3, 4), bty = 'n', ncol = 6, cex = 0.7, lwd = 2)
+mtext('Number of Permutations', 1, line = 2.5)
+par(mfrow = c(1, 1), mar = c(5, 4, 4, 2) + 0.1, oma = rep(0, 4)) # reset par
+@
+For more details, see the \texttt{permci\_glm()} documentation.
+
+
+\section*{References}
+\noindent\hangindent=15pt Dwass, M. (1957). Modified Randomization Tests for Nonparametric Hypotheses. \textit{The Annals of Mathematical Statistics} \textbf{28}, 181--187.
+
+\noindent\hangindent=15pt Garthwaite, P. H. (1996). Confidence intervals from randomization tests. \textit{Biometrics} \textbf{52}, 1387--1393.
+
+\noindent\hangindent=15pt Garthwaite, P. H. and Buckland, S. T. (1992). Generating Monte Carlo Confidence Intervals by the Robbins-Monro Process. \textit{Journal of the Royal Statistical Society. Series C (Applied Statistics)} \textbf{41}, 159--171.
+
+\noindent\hangindent=15pt Goyal, R., Blitzstein, J., and De Gruttola, V. (2013). Simulating Bipartite Networks to Reflect Uncertainty in Local Network Properties. \textit{Harvard University Biostatistics Working Paper Series}.
+
+\noindent\hangindent=15pt Hayes, R. J. and Moulton, L. H. (2017). \textit{Cluster Randomised Trials} 2nd edition. New York: Chapman and Hall/CRC.
+
+\noindent\hangindent=15pt O'Brien, K. L. et al. (2003). Efficacy and safety of seven-valent conjugate pneumococcal vaccine in American Indian children: group randomised trial. \textit{Lancet} \textbf{362}, 355--361.
+
+\noindent\hangindent=15pt Rabideau, D. J., and Wang, R. (2019). Randomization inference for a marginal treatment effect in cluster randomized trials. Manuscript sumbitted for publication.
+
+\noindent\hangindent=15pt Wang, R., Goyal, R., Lei, Q., Essex, M., and De~Gruttola, V. (2014). Sample size considerations in the design of cluster randomized trials of combination HIV prevention. \textit{Clinical Trials} \textbf{11}, 309–318.
+
+\end{document}
