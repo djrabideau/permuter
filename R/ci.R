@@ -54,6 +54,7 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
                        family = gaussian, data, nperm = 1000, nburn = 0,
                        level = 0.95, init, initmethod = 'perm',
                        ncores = 1, seed, quietly = F, ...) {
+  call <- match.call()
   if (ncores > 1) {
     doParallel::registerDoParallel(cores = ncores)
     if (!missing(seed))
@@ -131,7 +132,7 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
         ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
         low <- update_rm(init = low, thetahat = obs1, t, tstar, alpha, ii,
                          bound = "lower", ...)
-        data.tmp$low <- low
+        data$low <- low
         low.vec[i] <- low
 
         if (ncores == 1 & !quietly & i %in% seq(ceiling((nperm + nburn) / 10), (nperm + nburn),
@@ -160,7 +161,7 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
         ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
         up <- update_rm(init = up, thetahat = obs1, t, tstar, alpha, ii,
                         bound = "upper", ...)
-        data.tmp$up <- up
+        data$up <- up
         up.vec[i] <- up
 
         if (ncores == 1 & !quietly & i %in% seq(ceiling((nperm + nburn) / 10), (nperm + nburn),
@@ -181,9 +182,25 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
     }
   } # end foreach
 
+  if (missing(seed)) seed <- NA
   dimnames(trace)[[2]] <- c("lower", "upper")
-  return(list(ci = c(trace[nperm + nburn, 1], trace[nperm + nburn, 2]), trace = trace,
-              init = inits))
+  out <- list(ci = c(trace[nperm + nburn, 1], trace[nperm + nburn, 2]),
+              trace = trace,
+              init = inits,
+              call = call,
+              args = list(
+                trtname = trtname,
+                runit = runit,
+                strat = strat,
+                nperm = nperm,
+                nburn = nburn,
+                level = level,
+                initmethod = initmethod,
+                ncores = ncores,
+                seed = seed
+              ))
+  class(out) <- 'permci'
+  return(out)
 }
 
 
@@ -274,7 +291,7 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
         ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
         low <- update_rm(init = low, thetahat = obs1, t, tstar, alpha, ii,
                          bound = "lower", ...)
-        data.tmp$low <- low
+        data$low <- low
         low.vec[i] <- low
 
         if (ncores == 1 & !quietly & i %in% seq(ceiling((nperm + nburn) / 10), (nperm + nburn),
@@ -303,7 +320,7 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
         ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
         up <- update_rm(init = up, thetahat = obs1, t, tstar, alpha, ii,
                         bound = "upper", ...)
-        data.tmp$up <- up
+        data$up <- up
         up.vec[i] <- up
 
         if (ncores == 1 & !quietly & i %in% seq(ceiling((nperm + nburn) / 10), (nperm + nburn),
@@ -324,9 +341,25 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
     }
   } # end foreach
 
+  if (missing(seed)) seed <- NA
   dimnames(trace)[[2]] <- c("lower", "upper")
-  return(list(ci = c(trace[nperm + nburn, 1], trace[nperm + nburn, 2]), trace = trace,
-              init = inits))
+  out <- list(ci = c(trace[nperm + nburn, 1], trace[nperm + nburn, 2]),
+              trace = trace,
+              init = inits,
+              call = call,
+              args = list(
+                trtname = trtname,
+                runit = runit,
+                strat = strat,
+                nperm = nperm,
+                nburn = nburn,
+                level = level,
+                initmethod = initmethod,
+                ncores = ncores,
+                seed = seed
+              ))
+  class(out) <- 'permci'
+  return(out)
 }
 
 
@@ -411,7 +444,7 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
         ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
         low <- update_rm(init = low, thetahat = obs1, t, tstar, alpha, ii,
                          bound = "lower", ...)
-        data.tmp$low <- low
+        data$low <- low
         low.vec[i] <- low
 
         if (ncores == 1 & !quietly & i %in% seq(ceiling((nperm + nburn) / 10), (nperm + nburn),
@@ -441,7 +474,7 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
         ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
         up <- update_rm(init = up, thetahat = obs1, t, tstar, alpha, ii,
                         bound = "upper", ...)
-        data.tmp$up <- up
+        data$up <- up
         up.vec[i] <- up
 
         if (ncores == 1 & !quietly & i %in% seq(ceiling((nperm + nburn) / 10), (nperm + nburn),
@@ -462,9 +495,25 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
     }
   } # end foreach
 
+  if (missing(seed)) seed <- NA
   dimnames(trace)[[2]] <- c("lower", "upper")
-  return(list(ci = c(trace[nperm + nburn, 1], trace[nperm + nburn, 2]), trace = trace,
-              init = inits))
+  out <- list(ci = c(trace[nperm + nburn, 1], trace[nperm + nburn, 2]),
+              trace = trace,
+              init = inits,
+              call = call,
+              args = list(
+                trtname = trtname,
+                runit = runit,
+                strat = strat,
+                nperm = nperm,
+                nburn = nburn,
+                level = level,
+                initmethod = initmethod,
+                ncores = ncores,
+                seed = seed
+              ))
+  class(out) <- 'permci'
+  return(out)
 }
 
 
@@ -548,7 +597,7 @@ permci_coxph <- function(formula, trtname, runit, strat = NULL, data,
         ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
         low <- update_rm(init = low, thetahat = obs1, t, tstar, alpha, ii,
                          bound = "lower", ...)
-        data.tmp$low <- low
+        data$low <- low
         low.vec[i] <- low
 
         if (ncores == 1 & !quietly & i %in% seq(ceiling((nperm + nburn) / 10), (nperm + nburn),
@@ -577,7 +626,7 @@ permci_coxph <- function(formula, trtname, runit, strat = NULL, data,
         ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
         up <- update_rm(init = up, thetahat = obs1, t, tstar, alpha, ii,
                         bound = "upper", ...)
-        data.tmp$up <- up
+        data$up <- up
         up.vec[i] <- up
 
         if (ncores == 1 & !quietly & i %in% seq(ceiling((nperm + nburn) / 10), (nperm + nburn),
@@ -598,7 +647,23 @@ permci_coxph <- function(formula, trtname, runit, strat = NULL, data,
     }
   } # end foreach
 
+  if (missing(seed)) seed <- NA
   dimnames(trace)[[2]] <- c("lower", "upper")
-  return(list(ci = c(trace[nperm + nburn, 1], trace[nperm + nburn, 2]), trace = trace,
-              init = inits))
+  out <- list(ci = c(trace[nperm + nburn, 1], trace[nperm + nburn, 2]),
+              trace = trace,
+              init = inits,
+              call = call,
+              args = list(
+                trtname = trtname,
+                runit = runit,
+                strat = strat,
+                nperm = nperm,
+                nburn = nburn,
+                level = level,
+                initmethod = initmethod,
+                ncores = ncores,
+                seed = seed
+              ))
+  class(out) <- 'permci'
+  return(out)
 }
