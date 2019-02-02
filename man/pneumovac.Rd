@@ -13,13 +13,6 @@
 }}
 \source{
 \url{https://dataverse.harvard.edu/dataverse/crt}
-
-Hayes, R. J. and Moulton, L. H. (2017). Cluster Randomised Trials 2nd
-edition. New York: Chapman and Hall/CRC.
-
-O'Brien, K. L. et al. (2003). Efficacy and safety of seven-valent conjugate
-pneumococcal vaccine in American Indian children: group randomised trial.
-Lancet 362, 355--361.
 }
 \usage{
 pneumovac
@@ -36,5 +29,13 @@ were offered a comparator (meningococcal vaccine). These data, made available
 by Hayes and Moulton (2017) on Harvard Dataverse, include a
 random subsample of 449 children drawn from the original 8,292 trial
 participants.
+}
+\references{
+Hayes, R. J. and Moulton, L. H. (2017). Cluster Randomised Trials 2nd
+edition. New York: Chapman and Hall/CRC.
+
+O'Brien, K. L. et al. (2003). Efficacy and safety of seven-valent conjugate
+pneumococcal vaccine in American Indian children: group randomised trial.
+Lancet 362, 355--361.
 }
 \keyword{datasets}

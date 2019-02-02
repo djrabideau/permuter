@@ -203,3 +203,57 @@ permtest_coxph <- function(formula, trtname, runit, strat = NULL, data,
   names(out) <- c(trtname, "p.perm")
   return(out)
 }
+
+#' Randomization test
+#'
+#' Carry out a randomization test for a treatment effect using a user defined
+#' test statistic.
+#'
+#' @param f a function, which when applied to \code{data} returns the observed
+#' univariate test statistic. This function can be as simple or complex as
+#' desired as long as its one input argument is a data frame structured the same
+#' as \code{data}.
+#' @inheritParams permute
+#' @param data a data frame containing the variables necessary for the function
+#' \code{f}. This argument is passed to \code{f}.
+#' @param nperm number of permutations for randomization test
+#' @param ncores number of cores to use for computation. If ncores > 1, permtest
+#' runs in parallel.
+#' @param seed a numerical seed to use, passed to \code{\link[base]{set.seed}}
+#' (if \code{ncores == 1}) or \code{\link[doRNG]{registerDoRNG}} (if
+#' \code{ncores > 1}).
+#' @param quietly logical; if TRUE (and if ncores == 1), status updates will be
+#' printed to Console otherwise, suppress updates.
+#' @export
+permtest <- function(f, trtname, runit, strat = NULL, data,
+                     nperm = 1000, ncores = 1, seed, quietly = T) {
+  if (ncores > 1) {
+    doParallel::registerDoParallel(cores = ncores)
+    if (!missing(seed))
+      doRNG::registerDoRNG(seed)
+  } else {
+    if (!missing(seed))
+      set.seed(seed)
+  }
+
+  # calculate test statistic for obs data
+  obs1 <- f(data)
+
+  # permute based on runit
+  perm.stat <- foreach::foreach(i = 2:nperm, .combine = c) %dopar% {
+    data.tmp <- permute(data, trtname, runit, strat) # permuted data
+    if (ncores == 1 & !quietly & i %in% seq(ceiling(nperm / 10), nperm,
+                                            ceiling(nperm / 10)))
+      cat(i, "of", nperm, "permutations complete\n")
+
+    f(data.tmp) # return test statistic for perm data
+  }
+
+  comb.stat1 <- c(obs1, perm.stat)
+
+  pval.perm <- mean(abs(comb.stat1) >= abs(obs1)) # prop more extreme than obs
+
+  out <- c(obs1, pval.perm)
+  names(out) <- c(trtname, "p.perm")
+  return(out)
+}

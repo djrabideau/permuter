@@ -1,0 +1,9 @@
+base
+knitr
+permuter
+foreach
+registry
+pkgmaker
+rngtools
+doRNG
+survival
