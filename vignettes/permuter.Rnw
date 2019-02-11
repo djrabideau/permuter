@@ -383,10 +383,10 @@
 \begin{document}
 \maketitle
 
-The \textbf{permuter} package was developed to carry out randomization inference for a treatment effect in cluster randomized trials (Rabideau and Wang, 2019). In this vignette, we introduce the package and illustrate some of its functionality
+The \textbf{permuter} package was developed to carry out randomization inference for a treatment effect in cluster randomized trials (CRTs) (Rabideau and Wang, 2019). In this vignette, we introduce the package and illustrate some of its functionality.
 
 \section{Introduction}
-The \textbf{permuter} package contains various functions to calculate p-values and confidence intervals (CIs) for common regression models using randomization (or randomization-based, permutation) inference. For example, \texttt{permtest\_glm()} and \texttt{permci\_glm()} correspond to \texttt{stats::glm()}; \texttt{permtest\_coxph()} and \texttt{permci\_coxph()} correspond to \texttt{survival::coxph()}. Much of the syntax and arguments are kept consistent between the randomization-based functions and their counterparts. For example, to fit a simple logistic regression model, we could use
+The \textbf{permuter} package contains various functions to calculate p-values and confidence intervals (CIs) for common regression models using randomization (or randomization-based, permutation) inference. For example, \texttt{permtest\_glm()} and \texttt{permci\_glm()} correspond to \texttt{stats::glm()}, while \texttt{permtest\_coxph()} and \texttt{permci\_coxph()} correspond to \texttt{survival::coxph()}. Much of the syntax and arguments are kept consistent between the randomization-based functions and their counterparts. For example, to fit a simple logistic regression model, we could use
 <<intro1, eval = F>>=
 glm(outcome ~ exposure, family = binomial, data = ds)
 @
@@ -398,7 +398,7 @@ permci_glm(outcome ~ exposure, family = binomial, data = ds, ...)
 There are a few necessary (and other optional) arguments in \texttt{...} that we specify for the randomization-based functions (more on this later), but the basic formulation should be familiar. One optional argument worth mentioning here is \texttt{ncores}, which allows us to carry out randomization inference in parallel across multiple cores using functionality from \href{https://cran.r-project.org/web/packages/doParallel/index.html}{\textbf{doParallel}} and \href{https://cran.r-project.org/web/packages/doRNG/index.html}{\textbf{doRNG}}. E.g. we can specify \texttt{permtest\_glm(..., ncores = 3)} to run the randomization test in parallel across 3 cores.
 
 \section{The Basics}
-Let's learn the basics of using \textbf{permuter} with an example. The Pneumococcal Conjugate Vaccine Trial was a cluster randomized trial carried out from 1997 to 2000 to assess the safety and efficacy of a seven-valent conjugate pneumococcal vaccine (O'Brien et al., 2003). The study population was Navajo and White Mountain Apache children younger than 2 years, a group with one of the highest documented rates of invasive pneumococcal disease in the world at that time. A total of 38 geographic areas were randomized: 19 areas were offered pneumococcal vaccine and 19 were offered a comparator (meningococcal vaccine). One individual-level outcome measured during the trial was the total number of bacterial pneumonia episodes experienced by each child during follow-up. We will analyze this count outcome for a random subsample of 449 children drawn from the original 8,292 trial participants (Hayes and Moulton, 2017). These data are available in the \textbf{permuter} package and \href{https://dataverse.harvard.edu/dataverse/crt}{here} on Harvard Dataverse.
+Let's learn the basics of using \textbf{permuter} with an example. The Pneumococcal Conjugate Vaccine Trial was a CRT carried out from 1997 to 2000 to assess the safety and efficacy of a seven-valent conjugate pneumococcal vaccine (O'Brien et al., 2003). The study population was Navajo and White Mountain Apache children younger than 2 years, a group with one of the highest documented rates of invasive pneumococcal disease in the world at that time. A total of 38 geographic areas were randomized: 19 areas were offered pneumococcal vaccine and 19 were offered a comparator (meningococcal vaccine). One individual-level outcome measured during the trial was the total number of bacterial pneumonia episodes experienced by each child during follow-up. We will analyze this count outcome for a random subsample of 449 children drawn from the original 8,292 trial participants (Hayes and Moulton, 2017). These data are available in the \textbf{permuter} package and \href{https://dataverse.harvard.edu/dataverse/crt}{here} on Harvard Dataverse.
 
 The \texttt{pneumovac} data frame contains columns for the individual-level count outcome (\texttt{bpepisodes}), an indicator of randomization to the pneumococcal vaccine (\texttt{spnvac}), and a distinct identifier for each geographic area (\texttt{randunit}) and individual (\texttt{fakeid}).
 <<pneumovac>>=
@@ -415,12 +415,12 @@ test <- permtest_glm(bpepisodes ~ spnvac, trtname = 'spnvac',
 print(test) # logIRR
 print(exp(test['spnvac'])) # IRR
 @
-The \texttt{formula} (first argument), \texttt{family}, and \texttt{data} arguments are passed to the corresponding regression function, \texttt{stats::glm()}; \texttt{trtname} specifies the column name of the randomized treatment variable and \texttt{runit} specifies the column name of the unit of randomization identifier (e.g. cluster id); \texttt{nperm} specifies the number of permutations used for the Monte Carlo approximation of the exact p-value (Dwass, 1957). To speed up compuation, we could instead specify \texttt{ncores} $>$ 1 to run the randomization test in parallel across multiple cores. Finally, the \texttt{seed} argument is passed to \texttt{set.seed()} (if \texttt{ncores} = 1) or \texttt{doRNG::registerDoRNG()} (if \texttt{ncores} $>$ 1) to make results reproduceable.
+The \texttt{formula} (first argument), \texttt{family}, and \texttt{data} arguments are passed to the corresponding regression function, \texttt{stats::glm()}; \texttt{trtname} specifies the column name of the randomized treatment variable and \texttt{runit} specifies the column name of the unit of randomization identifier (e.g. cluster id); \texttt{nperm} specifies the number of permutations used for the Monte Carlo approximation of the exact p-value (Dwass, 1957). To speed up compuation, we could instead specify a larger integer value for \texttt{ncores} to run the randomization test in parallel across multiple cores. Finally, the \texttt{seed} argument is passed to \texttt{set.seed()} (if \texttt{ncores} = 1) or \texttt{doRNG::registerDoRNG()} (if \texttt{ncores} $>$ 1) to make results reproduceable (i.e. use a particular set of permutations).
 
 We get an estimated IRR of 0.64 (logIRR = -0.45) with a p-value of 0.078.
 
 \subsection{Randomization-Based Confidence Interval}
-Now, let's get the corresponding randomization-based 95\% CI using \texttt{permci\_glm()}:
+Now let's get the corresponding randomization-based 95\% CI using \texttt{permci\_glm()}.
 <<pci, warning = F, message = F, cache = T>>=
 ci <- permci_glm(bpepisodes ~ spnvac, trtname = 'spnvac',
                  runit = 'randunit', family = poisson, data = pneumovac,
@@ -429,24 +429,24 @@ ci <- permci_glm(bpepisodes ~ spnvac, trtname = 'spnvac',
 print(ci$ci) # logIRR
 print(exp(ci$ci)) # IRR
 @
-Most of the arguments are the same except the additional specification of the confidence \texttt{level} (95\% here) and \texttt{initmethod}, which specifies the method to obtain initial values for the CI procedure (see \texttt{permci\_glm()} documentation for more detail). The efficient CI procedure used in the \textbf{permuter} package was proposed by Garthwaite (1996) and is based on the Robbins-Monro search process. If \texttt{ncores} $>$ 1 for \texttt{permci\_glm()} (or another CI function), lower and upper bound search procedures run in parallel across two cores (but not more than two).
+Most of the arguments are the same except the additional specification of the confidence \texttt{level} (95\% here) and \texttt{initmethod}, which specifies the method to obtain initial values for the CI procedure (see \texttt{permci\_glm()} documentation for more detail). If \texttt{ncores} $>$ 1 for \texttt{permci\_glm()}, lower and upper bound search procedures run in parallel across two cores (but not more than two).
 
-We get a 95\% CI for the IRR of 0.37 to 1.07 (rounding conservatively).
+We get a 95\% CI for the IRR of 0.37 to 1.07.
 
-We can inspect convergence of the CI procedure simply by using \texttt{plot(ci)}:
+In \textbf{permuter}, we use an efficient algorithm (Garthwaite, 1996) based on the Robbins-Monro search process to calculate the CI. We can inspect convergence of each bound simply by using \texttt{plot(ci)}:
 <<plot, fig.height = 4, fig.width = 6, fig.align = 'center', echo = F>>=
 plot(ci)
 @
-Note: we've used only 1,000 permutations in this example for convenience. In practice, we'll usually need to increase the number of permutations (e.g. 5,000 or 20,000) to ensure adequate approximation of the exact p-value and convergence of the CI bounds.
+Note: we've used only 1,000 permutations in this example for convenience. In practice, we'll usually need to increase the number of permutations to ensure adequate approximation of the exact p-value and convergence of the CI bounds.
 
 \section{Going a Bit Deeper}
 
 \subsection{Stratified Randomization}
-CRTs often employ stratified randomization to improve balance between treatment arms, which can increase the power of the trial. Stratified designs can be accomodated simply by restricting the set of treatment permutations considered. In \textbf{permuter}, this just means including one additional argument, \texttt{strat}, when calling the test or CI function of interest.
+CRTs often employ stratified randomization to improve balance between treatment arms, which can increase the power of the trial. Stratified designs can be accomodated simply by restricting the set of permutations considered. In \textbf{permuter}, this just means including one additional argument, \texttt{strat}, when calling the test or CI function of interest.
 
 To illustrate this, let's consider the Botswana Combination Prevention Project (BCPP), a pair-matched HIV prevention CRT to test whether a combination treatment and prevention intervention could reduce population-level cumulative HIV incidence over 3 years of follow-up. A total of 30 communities were randomized, 15 to each arm. The primary study endpoint was cumulative HIV incidence, measured at scheduled study visits as time to HIV-infection within a cohort of individuals identified as HIV-negative among a 20\% random sample of eligible households at baseline. That is, we have an interval-censored time-to-event outcome for each cohort participant. Since the primary trial results have not yet been published, we use a simulated data set, which was generated to mimic the BCPP by applying an agent-based epidemic model to a dynamic network of simulated sexual partnerships (Goyal, Blitzstein, and De Gruttola, 2013; Wang et al., 2014). These data are also available in the \textbf{permuter} package.
 
-The \texttt{bcpp} data frame contains an indicator for assigment to the intervention arm (\texttt{treat}), a distinct identifier for community (\texttt{group}) and matched pair (\texttt{pair.id}), and two columns representing the interval-censored time-to-event outcome (\texttt{left}, \texttt{right}), measured in weeks.
+The \texttt{bcpp} data frame contains an indicator for assigment to the intervention arm (\texttt{treat}), a distinct identifier for community (\texttt{group}) and matched pair (\texttt{pair.id}), and two columns representing the interval-censored time-to-event outcome (\texttt{left}, \texttt{right}) measured in weeks.
 <<bcpp>>=
 head(bcpp)
 @
@@ -464,7 +464,9 @@ ci <- permci_survreg(Surv(left, right, type = 'interval2') ~ treat,
 print(test)
 print(ci$ci)
 @
-These results suggest significantly better outcomes (i.e. longer average times to HIV-infection) among those living in communities randomized to the intervention. Note, we didn't explicitly set \texttt{level = 0.95} or \texttt{initmethod = `perm'} this time, but these are the default values. Matching and stratification are just special forms of \textit{restricted} randomization, which is also handled by restricting the set of permutations. We plan to implement this more general functionality in future versions of \textbf{permuter}.
+These results suggest significantly better outcomes (i.e. longer average times to HIV-infection) among those living in communities randomized to the intervention. Note, we didn't explicitly set \texttt{level = 0.95} or \texttt{initmethod = `perm'} this time, but these are the default values.
+
+Matching and stratification are just special forms of \textit{restricted} randomization, which is also handled by restricting the set of permutations in the analysis. We plan to implement this more general functionality in future versions of \textbf{permuter}.
 
 \subsection{Fine-Tuning the Confidence Interval}
 The efficient CI algorithm (Garthwaite, 1996) used in \textbf{permuter} substantially reduces the computational burden of obtaining randomization-based CIs, but its performance may be sensitive to some of the choices that have been made under the hood. For example, one may wish to consider different starting values, restart the algorithm if the starting values seem poor, or modify the magnitude of each step in the algorithm. Let's see how we can fine-tune our CIs in \textbf{permuter}.
@@ -478,7 +480,7 @@ head(ds)
 @
 We've created a data set with 10 clusters in each study arm, ranging in size from 30 to 50 individuals. Other arguments control the true underlying treatment effect (e.g. an odds ratio of 1.5), the prevalence the outcome in the control group (e.g. 25\%), and the level of between-cluster hetergeneity (see \texttt{gendata\_crt()} documentation for more details).
 
-Let's compute 4 CIs with different sets of starting values: the first based on a small permutation test, the second based on a naive asymptotic CI, and two more specifying the initial values ourselves.
+Let's compute four CIs with different sets of starting values: the first based on a small permutation test, the second based on a naive asymptotic CI, and the last two specifying the initial values ourselves.
 <<ci_chains, cache = T>>=
 nperm <- 500
 ci1 <- permci_glm(y ~ trt, trtname = 'trt', runit = 'clusid',
@@ -525,7 +527,7 @@ par(mfrow = c(1, 1), mar = c(5, 4, 4, 2) + 0.1, oma = rep(0, 4)) # reset par
 @
 We see that \texttt{ci4} resulted in the widest CI, suggesting this search was sensitive to the wide starting values. Increasing the number of permutations may mitigate this sensitivity.
 
-Another approach we could use to combat poor starting values is restarting the algorithm after a fixed number of permutations. Since the magnitude of the steps gets smaller as the search proceeds, it may take a large number of permutations to recover from bad starting values. Using a ``burn-in'' phase can speed up this recovery. Let's consider the same 4 sets of starting values as before, but now specify the additional argument \texttt{nburn = `100'}.
+Another approach we could use to combat poor starting values is restarting the algorithm after a fixed number of permutations. Since the magnitude of the steps gets smaller as the search proceeds, it may take a large number of permutations to recover from bad starting values. Using a ``burn-in'' phase can speed up its recovery. Let's consider the same four sets of starting values as before, but now specify the additional argument \texttt{nburn = 100}.
 <<ci_burn, cache = T, echo = F>>=
 nburn <- 100
 ci5 <- permci_glm(y ~ trt, trtname = 'trt', runit = 'clusid',
@@ -573,9 +575,9 @@ legend('bottom', legend = c('initial', 'final', 'ci1', 'ci2', 'ci3', 'ci4'),
 mtext('Number of Permutations', 1, line = 2.5)
 par(mfrow = c(1, 1), mar = c(5, 4, 4, 2) + 0.1, oma = rep(0, 4)) # reset par
 @
-Comparing back to the plot without the burn-in permutations, our final estimates are much less sensitive to the poor initial values of \texttt{ci3} and \texttt{ci4}.
+Comparing back to the plot without the burn-in permutations, our final estimates are much less sensitive to the poor initial values of \texttt{ci3} and \texttt{ci4}. Even if we had fixed the total number of permutations at 500 and stopped after 400 post-burn-in permutations, we would have done better than before.
 
-We can go even deeper by modifying the Robbins-Monro search proccess itself. For example, we can specify \texttt{permci\_glm(..., m = 1)} to set the largest initial step magnitude (the magnitude is inversely proportional to \texttt{m}). This is yet another approach that may speed up convergence if we choose poor starting values, but could introduce problems if the first few steps happen to jump even further away from the true bounds.
+We can go even deeper by modifying the Robbins-Monro search proccess itself. For example, we can specify \texttt{permci\_glm(..., m = 1)} to set the largest initial step magnitude (the magnitude is inversely proportional to \texttt{m}). This is yet another approach that may speed up convergence if we choose poor starting values, but could introduce problems if the first few steps happen to jump even further away from the true bounds. Below, we see improved convergence by using a larger initial step size.
 <<ci_chains3, cache = T, echo = F>>=
 nperm <- 500
 ci9 <- permci_glm(y ~ trt, trtname = 'trt', runit = 'clusid',
@@ -638,6 +640,6 @@ For more details, see the \texttt{permci\_glm()} documentation.
 
 \noindent\hangindent=15pt Rabideau, D. J., and Wang, R. (2019). Randomization inference for a marginal treatment effect in cluster randomized trials. Manuscript sumbitted for publication.
 
-\noindent\hangindent=15pt Wang, R., Goyal, R., Lei, Q., Essex, M., and De~Gruttola, V. (2014). Sample size considerations in the design of cluster randomized trials of combination HIV prevention. \textit{Clinical Trials} \textbf{11}, 309–318.
+\noindent\hangindent=15pt Wang, R., Goyal, R., Lei, Q., Essex, M., and De~Gruttola, V. (2014). Sample size considerations in the design of cluster randomized trials of combination HIV prevention. \textit{Clinical Trials} \textbf{11}, 309--318.
 
 \end{document}
