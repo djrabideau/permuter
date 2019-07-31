@@ -57,12 +57,10 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
   call <- match.call()
   if (ncores > 1) {
     doParallel::registerDoParallel(cores = ncores)
-    if (!missing(seed))
-      doRNG::registerDoRNG(seed)
   } else {
-    if (!missing(seed))
-      set.seed(seed)
+    foreach::registerDoSEQ()
   }
+  if (!missing(seed)) set.seed(seed)
 
   data[, paste0(trtname, ".obs")] <- data[, trtname] # obs trt for offset
 
@@ -89,7 +87,7 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
       data$obs1 <- obs1
       formula.tmp <- update(formula,
                   as.formula(paste0("~ . + offset(", trtname, ".obs * obs1)")))
-      perm.stat <- foreach::foreach(i = 1:nperm_init, .combine = c) %dopar% {
+      perm.stat <- foreach::foreach(i = 1:nperm_init, .combine = c) %dorng% {
         data.tmp <- permute(data, trtname, runit, strat) # permuted data
         model.tmp <- glm(formula = formula.tmp, family = family,
                          data = data.tmp) # fit
@@ -111,10 +109,9 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
 
   inits <- c(low, up)
 
-  # if more than 1 core, run lower/upper in parallel
   # invert test for CI using offset approach
-  trace <- foreach::foreach(j = 1:min(ncores, 2), .combine = cbind) %dopar% {
-    if (j == 1 | ncores == 1) {
+  trace <- foreach::foreach(j = 1:2, .combine = cbind) %dorng% {
+    if (j == 1) {
       # search for lower
       low.vec <- rep(NA, nperm + nburn)
       formula.tmp <- update(formula,
@@ -143,7 +140,7 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
       low.vec
     }
 
-    if (j == 2 | ncores == 1) {
+    if (j == 2) {
       # search for upper
       up.vec <- rep(NA, nperm + nburn)
       formula.tmp <- update(formula,
@@ -173,9 +170,7 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
     }
 
     # return these values
-    if (ncores == 1) {
-      cbind(low.vec, up.vec)
-    } else if (j == 1) {
+    if (j == 1) {
       low.vec
     } else {
       up.vec
@@ -212,12 +207,10 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
                          ncores = 1, seed, quietly = F, ...) {
   if (ncores > 1) {
     doParallel::registerDoParallel(cores = ncores)
-    if (!missing(seed))
-      doRNG::registerDoRNG(seed)
   } else {
-    if (!missing(seed))
-      set.seed(seed)
+    foreach::registerDoSEQ()
   }
+  if (!missing(seed)) set.seed(seed)
 
   data[, paste0(trtname, ".obs")] <- data[, trtname] # obs trt for offset
 
@@ -251,7 +244,7 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
       data$obs1 <- obs1
       formula.tmp <- update(formula,
                   as.formula(paste0("~ . + offset(", trtname, ".obs * obs1)")))
-      perm.stat <- foreach::foreach(i = 1:nperm_init, .combine = c) %dopar% {
+      perm.stat <- foreach::foreach(i = 1:nperm_init, .combine = c) %dorng% {
         data.tmp <- permute(data, trtname, runit, strat) # permuted data
         model.tmp <- icenReg::ic_sp(formula = formula.tmp, data = data.tmp) # fit
         as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
@@ -274,8 +267,8 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
 
   # if more than 1 core, run lower/upper in parallel
   # search for lower
-  trace <- foreach::foreach(j = 1:min(ncores, 2), .combine = cbind) %dopar% {
-    if (j == 1 | ncores == 1) {
+  trace <- foreach::foreach(j = 1:2, .combine = cbind) %dorng% {
+    if (j == 1) {
       low.vec <- rep(NA, nperm + nburn)
       formula.tmp <- update(formula,
                   as.formula(paste0("~ . + offset(", trtname, ".obs * low)")))
@@ -302,7 +295,7 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
       low.vec
     }
 
-    if (j == 2 | ncores == 1) {
+    if (j == 2) {
 
       # search for upper
       up.vec <- rep(NA, nperm + nburn)
@@ -332,9 +325,7 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
     }
 
     # return these values
-    if (ncores == 1) {
-      cbind(low.vec, up.vec)
-    } else if (j == 1) {
+    if (j == 1) {
       low.vec
     } else {
       up.vec
@@ -371,12 +362,10 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
                            ncores = 1, seed, quietly = F, ...) {
   if (ncores > 1) {
     doParallel::registerDoParallel(cores = ncores)
-    if (!missing(seed))
-      doRNG::registerDoRNG(seed)
   } else {
-    if (!missing(seed))
-      set.seed(seed)
+    foreach::registerDoSEQ()
   }
+  if (!missing(seed)) set.seed(seed)
 
   data[, paste0(trtname, ".obs")] <- data[, trtname] # obs trt for offset
 
@@ -403,7 +392,7 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
       data$obs1 <- obs1
       formula.tmp <- update(formula,
                   as.formula(paste0("~ . + offset(", trtname, ".obs * obs1)")))
-      perm.stat <- foreach::foreach(i = 1:nperm_init, .combine = c) %dopar% {
+      perm.stat <- foreach::foreach(i = 1:nperm_init, .combine = c) %dorng% {
         data.tmp <- permute(data, trtname, runit, strat) # permuted data
         model.tmp <- survival::survreg(formula = formula.tmp, data = data.tmp, dist = dist) # fit
         as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
@@ -426,8 +415,8 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
 
   # if more than 1 core, run lower/upper in parallel
   # search for lower
-  trace <- foreach::foreach(j = 1:min(ncores, 2), .combine = cbind) %dopar% {
-    if (j == 1 | ncores == 1) {
+  trace <- foreach::foreach(j = 1:2, .combine = cbind) %dorng% {
+    if (j == 1) {
       low.vec <- rep(NA, nperm + nburn)
       formula.tmp <- update(formula,
                   as.formula(paste0("~ . + offset(", trtname, ".obs * low)")))
@@ -455,7 +444,7 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
       low.vec
     }
 
-    if (j == 2 | ncores == 1) {
+    if (j == 2) {
 
       # search for upper
       up.vec <- rep(NA, nperm + nburn)
@@ -486,9 +475,7 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
     }
 
     # return these values
-    if (ncores == 1) {
-      cbind(low.vec, up.vec)
-    } else if (j == 1) {
+    if (j == 1) {
       low.vec
     } else {
       up.vec
@@ -525,12 +512,10 @@ permci_coxph <- function(formula, trtname, runit, strat = NULL, data,
                            ncores = 1, seed, quietly = F, ...) {
   if (ncores > 1) {
     doParallel::registerDoParallel(cores = ncores)
-    if (!missing(seed))
-      doRNG::registerDoRNG(seed)
   } else {
-    if (!missing(seed))
-      set.seed(seed)
+    foreach::registerDoSEQ()
   }
+  if (!missing(seed)) set.seed(seed)
 
   data[, paste0(trtname, ".obs")] <- data[, trtname] # obs trt for offset
 
@@ -557,7 +542,7 @@ permci_coxph <- function(formula, trtname, runit, strat = NULL, data,
       data$obs1 <- obs1
       formula.tmp <- update(formula,
                             as.formula(paste0("~ . + offset(", trtname, ".obs * obs1)")))
-      perm.stat <- foreach::foreach(i = 1:nperm_init, .combine = c) %dopar% {
+      perm.stat <- foreach::foreach(i = 1:nperm_init, .combine = c) %dorng% {
         data.tmp <- permute(data, trtname, runit, strat) # permuted data
         model.tmp <- survival::coxph(formula = formula.tmp, data = data.tmp) # fit
         as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
@@ -580,8 +565,8 @@ permci_coxph <- function(formula, trtname, runit, strat = NULL, data,
 
   # if more than 1 core, run lower/upper in parallel
   # search for lower
-  trace <- foreach::foreach(j = 1:min(ncores, 2), .combine = cbind) %dopar% {
-    if (j == 1 | ncores == 1) {
+  trace <- foreach::foreach(j = 1:2, .combine = cbind) %dorng% {
+    if (j == 1) {
       low.vec <- rep(NA, nperm + nburn)
       formula.tmp <- update(formula,
                             as.formula(paste0("~ . + offset(", trtname, ".obs * low)")))
@@ -608,7 +593,7 @@ permci_coxph <- function(formula, trtname, runit, strat = NULL, data,
       low.vec
     }
 
-    if (j == 2 | ncores == 1) {
+    if (j == 2) {
 
       # search for upper
       up.vec <- rep(NA, nperm + nburn)
@@ -638,9 +623,7 @@ permci_coxph <- function(formula, trtname, runit, strat = NULL, data,
     }
 
     # return these values
-    if (ncores == 1) {
-      cbind(low.vec, up.vec)
-    } else if (j == 1) {
+    if (j == 1) {
       low.vec
     } else {
       up.vec

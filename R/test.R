@@ -55,20 +55,18 @@ permtest_glm <- function(formula, trtname, runit, strat = NULL,
                          family = gaussian, data, nperm = 1000, ncores = 1,
                          seed, quietly = T) {
   if (ncores > 1) {
-  doParallel::registerDoParallel(cores = ncores)
-  if (!missing(seed))
-    doRNG::registerDoRNG(seed)
+    doParallel::registerDoParallel(cores = ncores)
   } else {
-    if (!missing(seed))
-      set.seed(seed)
+    foreach::registerDoSEQ()
   }
+  if (!missing(seed)) set.seed(seed)
 
   # fit glm
   m1 <- glm(formula = formula, family = family, data = data)
   obs1 <- as.numeric(coef(m1)[trtname])
 
   # permute based on runit
-  perm.stat <- foreach::foreach(i = 2:nperm, .combine = c) %dopar% {
+  perm.stat <- foreach::foreach(i = 2:nperm, .combine = c) %dorng% {
     data.tmp <- permute(data, trtname, runit, strat) # permuted data
     model.tmp <- glm(formula = formula, family = family, data = data.tmp) # fit
     if (ncores == 1 & !quietly & i %in% seq(ceiling(nperm / 10), nperm,
@@ -94,19 +92,17 @@ permtest_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
                            nperm = 1000, ncores = 1, seed, quietly = T) {
   if (ncores > 1) {
     doParallel::registerDoParallel(cores = ncores)
-    if (!missing(seed))
-      doRNG::registerDoRNG(seed)
   } else {
-    if (!missing(seed))
-      set.seed(seed)
+    foreach::registerDoSEQ()
   }
+  if (!missing(seed)) set.seed(seed)
 
   # fit ic_sp
   m1 <- icenReg::ic_sp(formula = formula, data = data)
   obs1 <- as.numeric(coef(m1)[trtname])
 
   # permute based on runit
-  perm.stat <- foreach::foreach(i = 2:nperm, .combine = c) %dopar% {
+  perm.stat <- foreach::foreach(i = 2:nperm, .combine = c) %dorng% {
     data.tmp <- permute(data, trtname, runit, strat) # permuted data
     model.tmp <- icenReg::ic_sp(formula = formula, data = data.tmp) # fit
 
@@ -133,19 +129,17 @@ permtest_survreg <- function(formula, trtname, runit, strat = NULL, data,
                              seed, quietly = T) {
   if (ncores > 1) {
     doParallel::registerDoParallel(cores = ncores)
-    if (!missing(seed))
-      doRNG::registerDoRNG(seed)
   } else {
-    if (!missing(seed))
-      set.seed(seed)
+    foreach::registerDoSEQ()
   }
+  if (!missing(seed)) set.seed(seed)
 
   # fit
   m1 <- survival::survreg(formula = formula, data = data, dist = dist)
   obs1 <- as.numeric(coef(m1)[trtname])
 
   # permute based on runit
-  perm.stat <- foreach::foreach(i = 2:nperm, .combine = c) %dopar% {
+  perm.stat <- foreach::foreach(i = 2:nperm, .combine = c) %dorng% {
     data.tmp <- permute(data, trtname, runit, strat) # permuted data
     model.tmp <- survival::survreg(formula = formula, data = data.tmp,
                                    dist = dist) # fit
@@ -172,19 +166,17 @@ permtest_coxph <- function(formula, trtname, runit, strat = NULL, data,
                              nperm = 1000, ncores = 1, seed, quietly = T) {
   if (ncores > 1) {
     doParallel::registerDoParallel(cores = ncores)
-    if (!missing(seed))
-      doRNG::registerDoRNG(seed)
   } else {
-    if (!missing(seed))
-      set.seed(seed)
+    foreach::registerDoSEQ()
   }
+  if (!missing(seed)) set.seed(seed)
 
   # fit
   m1 <- survival::coxph(formula = formula, data = data)
   obs1 <- as.numeric(coef(m1)[trtname])
 
   # permute based on runit
-  perm.stat <- foreach::foreach(i = 2:nperm, .combine = c) %dopar% {
+  perm.stat <- foreach::foreach(i = 2:nperm, .combine = c) %dorng% {
     data.tmp <- permute(data, trtname, runit, strat) # permuted data
     model.tmp <- survival::coxph(formula = formula, data = data.tmp) # fit
 
@@ -229,18 +221,16 @@ permtest <- function(f, trtname, runit, strat = NULL, data,
                      nperm = 1000, ncores = 1, seed, quietly = T) {
   if (ncores > 1) {
     doParallel::registerDoParallel(cores = ncores)
-    if (!missing(seed))
-      doRNG::registerDoRNG(seed)
   } else {
-    if (!missing(seed))
-      set.seed(seed)
+    foreach::registerDoSEQ()
   }
+  if (!missing(seed)) set.seed(seed)
 
   # calculate test statistic for obs data
   obs1 <- f(data)
 
   # permute based on runit
-  perm.stat <- foreach::foreach(i = 2:nperm, .combine = c) %dopar% {
+  perm.stat <- foreach::foreach(i = 2:nperm, .combine = c) %dorng% {
     data.tmp <- permute(data, trtname, runit, strat) # permuted data
     if (ncores == 1 & !quietly & i %in% seq(ceiling(nperm / 10), nperm,
                                             ceiling(nperm / 10)))
