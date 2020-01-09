@@ -376,26 +376,26 @@
 \def\logit{\mbox{logit}}
 \newcommand{\set}[1]{\{#1\}}
 
-\title{Randomization Inference with \textbf{permuter}}
+\title{Randomization-Based Inference with \textbf{permuter}}
 \author{Dustin J. Rabideau}
 \date{\today}
 
 \begin{document}
 \maketitle
 
-The \textbf{permuter} package was developed to carry out randomization inference for a treatment effect in cluster randomized trials (CRTs) (Rabideau and Wang, 2019). In this vignette, we introduce the package and illustrate some of its functionality.
+The \textbf{permuter} package was developed to carry out randomization-based inference for a treatment effect in cluster randomized trials (CRTs) (Rabideau and Wang). In this vignette, we introduce the package and illustrate some of its functionality.
 
 \section{Introduction}
-The \textbf{permuter} package contains various functions to calculate p-values and confidence intervals (CIs) for common regression models using randomization (or randomization-based, permutation) inference. For example, \texttt{permtest\_glm()} and \texttt{permci\_glm()} correspond to \texttt{stats::glm()}, while \texttt{permtest\_coxph()} and \texttt{permci\_coxph()} correspond to \texttt{survival::coxph()}. Much of the syntax and arguments are kept consistent between the randomization-based functions and their counterparts. For example, to fit a simple logistic regression model, we could use
+The \textbf{permuter} package contains various functions to calculate p-values and confidence intervals (CIs) for common regression models using randomization-based inference. For example, \texttt{permtest\_glm()} and \texttt{permci\_glm()} correspond to \texttt{stats::glm()}, while \texttt{permtest\_coxph()} and \texttt{permci\_coxph()} correspond to \texttt{survival::coxph()}. Much of the syntax and arguments are kept consistent between the randomization-based functions and their counterparts. For example, to fit a simple logistic regression model, we could use
 <<intro1, eval = F>>=
 glm(outcome ~ exposure, family = binomial, data = ds)
 @
-To carry out randomization inference for this model, we instead use
+To carry out randomization-based inference for this model, we instead use
 <<intro2, eval = F>>=
 permtest_glm(outcome ~ exposure, family = binomial, data = ds, ...)
 permci_glm(outcome ~ exposure, family = binomial, data = ds, ...)
 @
-There are a few necessary (and other optional) arguments in \texttt{...} that we specify for the randomization-based functions (more on this later), but the basic formulation should be familiar. One optional argument worth mentioning here is \texttt{ncores}, which allows us to carry out randomization inference in parallel across multiple cores using functionality from \href{https://cran.r-project.org/web/packages/doParallel/index.html}{\textbf{doParallel}} and \href{https://cran.r-project.org/web/packages/doRNG/index.html}{\textbf{doRNG}}. E.g. we can specify \texttt{permtest\_glm(..., ncores = 3)} to run the randomization test in parallel across 3 cores.
+There are a few necessary (and other optional) arguments in \texttt{...} that we specify for the randomization-based functions (more on this later), but the basic formulation should be familiar. One optional argument worth mentioning here is \texttt{ncores}, which allows us to carry out randomization-based inference in parallel across multiple cores using functionality from \href{https://cran.r-project.org/web/packages/doParallel/index.html}{\textbf{doParallel}} and \href{https://cran.r-project.org/web/packages/doRNG/index.html}{\textbf{doRNG}}. E.g. we can specify \texttt{permtest\_glm(..., ncores = 3)} to run the randomization test in parallel across 3 cores.
 
 \section{The Basics}
 Let's learn the basics of using \textbf{permuter} with an example. The Pneumococcal Conjugate Vaccine Trial was a CRT carried out from 1997 to 2000 to assess the safety and efficacy of a seven-valent conjugate pneumococcal vaccine (O'Brien et al., 2003). The study population was Navajo and White Mountain Apache children younger than 2 years, a group with one of the highest documented rates of invasive pneumococcal disease in the world at that time. A total of 38 geographic areas were randomized: 19 areas were offered pneumococcal vaccine and 19 were offered a comparator (meningococcal vaccine). One individual-level outcome measured during the trial was the total number of bacterial pneumonia episodes experienced by each child during follow-up. We will analyze this count outcome for a random subsample of 449 children drawn from the original 8,292 trial participants (Hayes and Moulton, 2017). These data are available in the \textbf{permuter} package and \href{https://dataverse.harvard.edu/dataverse/crt}{here} on Harvard Dataverse.
@@ -407,7 +407,7 @@ head(pneumovac)
 @
 
 \subsection{Randomization Test}
-Let's use randomization inference to determine whether there was a difference in the rate of bacterial pneumonia episodes between the two intervention groups. The test statistic we will use is the estimated log incidence rate ratio (IRR) from a Poisson generalized linear model (GLM). Let's calculate the p-value based on 1,000 permutations. To carry out this randomization test, we'll use the \texttt{permtest\_glm()} function in the \textbf{permuter} package.
+Let's use randomization-based inference to determine whether there was a difference in the rate of bacterial pneumonia episodes between the two intervention groups. The test statistic we will use is the estimated log incidence rate ratio (IRR) from a Poisson generalized linear model (GLM). Let's calculate the p-value based on 1,000 permutations. To carry out this randomization test, we'll use the \texttt{permtest\_glm()} function in the \textbf{permuter} package.
 <<ptest, warning = F, cache = T>>=
 test <- permtest_glm(bpepisodes ~ spnvac, trtname = 'spnvac',
                      runit = 'randunit', family = poisson, data = pneumovac,
@@ -444,13 +444,13 @@ Note: we've used only 1,000 permutations in this example for convenience. In pra
 \subsection{Stratified Randomization}
 CRTs often employ stratified randomization to improve balance between treatment arms, which can increase the power of the trial. Stratified designs can be accomodated simply by restricting the set of permutations considered. In \textbf{permuter}, this just means including one additional argument, \texttt{strat}, when calling the test or CI function of interest.
 
-To illustrate this, let's consider the Botswana Combination Prevention Project (BCPP), a pair-matched HIV prevention CRT to test whether a combination treatment and prevention intervention could reduce population-level cumulative HIV incidence over 3 years of follow-up. A total of 30 communities were randomized, 15 to each arm. The primary study endpoint was cumulative HIV incidence, measured at scheduled study visits as time to HIV-infection within a cohort of individuals identified as HIV-negative among a 20\% random sample of eligible households at baseline. That is, we have an interval-censored time-to-event outcome for each cohort participant. Since the primary trial results have not yet been published, we use a simulated data set, which was generated to mimic the BCPP by applying an agent-based epidemic model to a dynamic network of simulated sexual partnerships (Goyal, Blitzstein, and De Gruttola, 2013; Wang et al., 2014). These data are also available in the \textbf{permuter} package.
+To illustrate this, let's consider the Botswana Combination Prevention Project (BCPP), a pair-matched HIV prevention CRT to test whether a combination treatment and prevention intervention could reduce population-level cumulative HIV incidence over 3 years of follow-up. A total of 30 communities were randomized, 15 to each arm. The primary study endpoint was cumulative HIV incidence, measured at scheduled study visits as time to HIV-infection within a cohort of individuals identified as HIV-negative among a 20\% random sample of eligible households at baseline. That is, we have an interval-censored time-to-event outcome for each cohort participant. Since the primary trial data are confidential, we use a simulated data set, which was generated to mimic the BCPP by applying an agent-based epidemic model to a dynamic network of simulated sexual partnerships (Goyal, Blitzstein, and De Gruttola, 2013; Wang et al., 2014). These data are also available in the \textbf{permuter} package.
 
 The \texttt{bcpp} data frame contains an indicator for assigment to the intervention arm (\texttt{treat}), a distinct identifier for community (\texttt{group}) and matched pair (\texttt{pair.id}), and two columns representing the interval-censored time-to-event outcome (\texttt{left}, \texttt{right}) measured in weeks.
 <<bcpp>>=
 head(bcpp)
 @
-Let's carry out randomization inference for these data, making sure we restrict the analysis based on the pair-matched design by including \texttt{strat = `pair.id'}. We'll use the estimated treatment effect from an interval-censored Weibull regression model as our test statistic.
+Let's carry out randomization-based inference for these data, making sure we restrict the analysis based on the pair-matched design by including \texttt{strat = `pair.id'}. We'll use the estimated treatment effect from an interval-censored Weibull regression model as our test statistic.
 <<bcpp_analysis, cache = T, warning = F>>=
 library(survival)
 test <- permtest_survreg(Surv(left, right, type = 'interval2') ~ treat,
@@ -464,12 +464,12 @@ ci <- permci_survreg(Surv(left, right, type = 'interval2') ~ treat,
 print(test)
 print(ci$ci)
 @
-These results suggest significantly better outcomes (i.e. longer average times to HIV-infection) among those living in communities randomized to the intervention. Note, we didn't explicitly set \texttt{level = 0.95} or \texttt{initmethod = `perm'} this time, but these are the default values.
+These results suggest better outcomes (i.e. longer average times to HIV-infection) among those living in communities randomized to the intervention. Note, we didn't explicitly set \texttt{level = 0.95} or \texttt{initmethod = `perm'} this time, but these are the default values.
 
 Matching and stratification are just special forms of \textit{restricted} randomization, which is also handled by restricting the set of permutations in the analysis. We plan to implement this more general functionality in future versions of \textbf{permuter}.
 
 \subsection{Fine-Tuning the Confidence Interval}
-The efficient CI algorithm (Garthwaite, 1996) used in \textbf{permuter} substantially reduces the computational burden of obtaining randomization-based CIs, but its performance may be sensitive to some of the choices that have been made under the hood. For example, one may wish to consider different starting values, restart the algorithm if the starting values seem poor, or modify the magnitude of each step in the algorithm. Let's see how we can fine-tune our CIs in \textbf{permuter}.
+The efficient CI algorithm (Garthwaite, 1996) used in \textbf{permuter} substantially reduces the computational burden of obtaining randomization-based CIs, but its performance could be affected by some of the choices that have been made under the hood. For example, one may wish to consider different starting values, restart the algorithm if the starting values seem poor, or modify the magnitude of each step in the algorithm. Let's see how we can fine-tune our CIs in \textbf{permuter}.
 
 Let's generate some data from a CRT with a binary outcome.
 <<simdata>>=
@@ -638,7 +638,7 @@ For more details, see the \texttt{permci\_glm()} documentation.
 
 \noindent\hangindent=15pt O'Brien, K. L. et al. (2003). Efficacy and safety of seven-valent conjugate pneumococcal vaccine in American Indian children: group randomised trial. \textit{Lancet} \textbf{362}, 355--361.
 
-\noindent\hangindent=15pt Rabideau, D. J., and Wang, R. (2019). Randomization inference for a marginal treatment effect in cluster randomized trials. Manuscript sumbitted for publication.
+\noindent\hangindent=15pt Rabideau, D. J., and Wang, R. Randomization-Based Confidence Intervals for Cluster Randomized Trials. \textit{Biostatistics}, Revision Invited.
 
 \noindent\hangindent=15pt Wang, R., Goyal, R., Lei, Q., Essex, M., and De~Gruttola, V. (2014). Sample size considerations in the design of cluster randomized trials of combination HIV prevention. \textit{Clinical Trials} \textbf{11}, 309--318.
 

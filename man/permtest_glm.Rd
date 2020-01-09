@@ -2,6 +2,7 @@
 % Please edit documentation in R/test.R
 \name{permtest_glm}
 \alias{permtest_glm}
+\alias{permtest_glmer}
 \alias{permtest_ic_sp}
 \alias{permtest_survreg}
 \alias{permtest_coxph}
@@ -9,6 +10,10 @@
 \usage{
 permtest_glm(formula, trtname, runit, strat = NULL, family = gaussian,
   data, nperm = 1000, ncores = 1, seed, quietly = T)
+
+permtest_glmer(formula, trtname, runit, strat = NULL,
+  family = gaussian, data, nperm = 1000, ncores = 1, seed,
+  quietly = T)
 
 permtest_ic_sp(formula, trtname, runit, strat = NULL, data,
   nperm = 1000, ncores = 1, seed, quietly = T)
@@ -73,6 +78,8 @@ Different functions corrrespond to different regression models:
 \itemize{
   \item \code{permtest_glm}: randomization test based on
   \code{\link[stats]{glm}}
+  \item \code{permtest_glmer}: randomization test based on
+  \code{\link[lme4]{glmer}}
   \item \code{permtest_ic_sp}: randomization test based on
   \code{\link[icenReg]{ic_sp}}
   \item \code{permtest_survreg}: randomization test based on

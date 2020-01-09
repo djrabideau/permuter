@@ -9,6 +9,8 @@
 #' \itemize{
 #'   \item \code{permtest_glm}: randomization test based on
 #'   \code{\link[stats]{glm}}
+#'   \item \code{permtest_glmer}: randomization test based on
+#'   \code{\link[lme4]{glmer}}
 #'   \item \code{permtest_ic_sp}: randomization test based on
 #'   \code{\link[icenReg]{ic_sp}}
 #'   \item \code{permtest_survreg}: randomization test based on
@@ -85,6 +87,57 @@ permtest_glm <- function(formula, trtname, runit, strat = NULL,
   return(out)
 }
 
+#' @rdname permtest_glm
+#' @export
+permtest_glmer <- function(formula, trtname, runit, strat = NULL,
+                           family = gaussian, data, nperm = 1000, ncores = 1,
+                           seed, quietly = T) {
+  if (is.character(family))
+    family <- get(family, mode = "function", envir = parent.frame())
+  if (is.function(family))
+    family <- family()
+  if (is.null(family$family)) {
+    stop(paste0("family '", family, "' not recognized"))
+  }
+
+  if (ncores > 1) {
+    doParallel::registerDoParallel(cores = ncores)
+  } else {
+    foreach::registerDoSEQ()
+  }
+  if (!missing(seed)) set.seed(seed)
+
+  # fit GLMM
+  if (family$family == "gaussian") {
+    m1 <- lme4::lmer(formula = formula, data = data, REML = F)
+  } else {
+    m1 <- lme4::glmer(formula = formula, family = family, data = data)
+  }
+  obs1 <- as.numeric(fixef(m1)[trtname])
+
+  # permute based on runit
+  perm.stat <- foreach::foreach(i = 2:nperm, .combine = c) %dorng% {
+    data.tmp <- permute(data, trtname, runit, strat) # permuted data
+    if (family$family == "gaussian") {
+      model.tmp <- lme4::lmer(formula = formula, data = data.tmp)
+    } else {
+      model.tmp <- lme4::glmer(formula = formula, family = family, data = data.tmp) # fit
+    }
+    if (ncores == 1 & !quietly & i %in% seq(ceiling(nperm / 10), nperm,
+                                            ceiling(nperm / 10)))
+      cat(i, "of", nperm, "permutations complete\n")
+
+    as.numeric(fixef(model.tmp)[trtname]) # return tx effect estimate
+  }
+
+  comb.stat1 <- c(obs1, perm.stat)
+
+  pval.perm <- mean(abs(comb.stat1) >= abs(obs1)) # prop more extreme than obs
+
+  out <- c(obs1, pval.perm)
+  names(out) <- c(trtname, "p.perm")
+  return(out)
+}
 
 #' @rdname permtest_glm
 #' @export

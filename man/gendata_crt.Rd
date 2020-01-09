@@ -5,7 +5,7 @@
 \title{Generate data from GLMM}
 \usage{
 gendata_crt(family = gaussian, nclus, size, theta = 0, sigma, Sigma,
-  mu, rho = 0, sd = 1)
+  mu, rho = 0, sd = 1, redist = "normal")
 }
 \arguments{
 \item{family}{a description of the error distribution and link function to
@@ -24,7 +24,8 @@ drawn from a uniform distribution}
 
 \item{sigma}{SD of random cluster effect; ignored if \code{Sigma} is specified}
 
-\item{Sigma}{optional user-specified covariance matrix for random cluster effects}
+\item{Sigma}{optional user-specified covariance matrix for multivariate
+normal random cluster effects}
 
 \item{mu}{intercept in GLMM}
 
@@ -32,6 +33,9 @@ drawn from a uniform distribution}
 non-zero, then there is corrrelation between clusters.}
 
 \item{sd}{SD of residual error (only applies if family = gaussian)}
+
+\item{redist}{assumed distribution for random effects (currently supports
+'normal' and 'lognormal')}
 }
 \description{
 \code{gendata_crt} generates a dataset from a generalized linear mixed model
@@ -44,7 +48,8 @@ The data will be sorted increasing by cluster then subject. The GLMM is
 where \eqn{X_k} is the treatment indicator for the \eqn{k}th cluster and
 \eqn{\alpha ~ N(0, Sigma)}. If only \code{sigma} is specified, then
 \code{Sigma} is exchangeable with \code{sigma^2} on the diagonals and
-\code{rho * sigma^2} on the off-diagonals.
+\code{rho * sigma^2} on the off-diagonals. If redist = 'lognormal', then
+\eqn{\alpha ~ logN(meanlog = 0, sdlog = sigma)}.
 }
 \examples{
 # generate data from GLMM with bernoulli outcome,

@@ -41,9 +41,9 @@
 #' HIV-infection within a cohort of individuals identified as HIV-negative among
 #' a 20\% random sample of eligible households at baseline. That is, we have an
 #' interval-censored time-to-event outcome for each cohort participant. Since
-#' the primary trial results have not yet been published, this is a simulated
-#' data set, which was generated to mimic the BCPP by applying an agent-based
-#' epidemic model to a dynamic network of simulated sexual partnerships
+#' the primary trial data are confidential, this is a simulated data set,
+#' which was generated to mimic the BCPP by applying an agent-based epidemic
+#' model to a dynamic network of simulated sexual partnerships
 #' (Goyal, Blitzstein, and De Gruttola, 2013; Wang et al., 2014).
 #'
 #' @format A data frame with 10465 observations and 5 variables:
