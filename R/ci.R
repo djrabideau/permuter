@@ -1,14 +1,16 @@
-#' Randomization CI for regression
+#' Randomization-Basd CI for regression
 #'
-#' Calculate a randomization confidence interval (CI) for a regression parameter.
+#' Calculate a randomization-based confidence interval (CI) for a regression
+#' parameter.
 #'
-#' These functions are used to calculate randomization confidence intervals (CI)
-#' for a regression parameter. These CIs correspond to inverting randomization
-#' tests by using an offset to test non-zero "null" values. To invert the
-#' randomization test, these functions use a computationally efficient CI
-#' algorithm proposed by
-#' \href{http://doi.org/10.2307/2532852}{Garthwaite (1996)}, which is based on
-#' the Robbins-Monro search process.
+#' These functions are used to calculate randomization-based confidence
+#' intervals (CI) for a regression parameter. These CIs correspond to inverting
+#' randomization tests by using an offset to test non-zero "null" values
+#' (Rabideau and Wang). To invert the randomization test, these functions adapt
+#' a computationally efficient CI algorithm based on the Robbins-Monro search
+#' process. Two methods can be used and correspond to
+#' \href{http://doi.org/10.2307/2532852}{Garthwaite (1996)} and
+#' \href{https://doi.org/10.1198/jcgs.2009.0011}{Garthwaite and Jones (2009)}.
 #'
 #' Different functions
 #' corrrespond to different regression models:
@@ -47,13 +49,28 @@
 #' lower and upper bound search procedures run in parallel across 2 cores.
 #' @param quietly logical; if TRUE (and if ncores == 1), status updates will be
 #' printed to Console otherwise, suppress updates.
-#' @param ... optional arguments to \code{\link[permuter]{update_rm}}, e.g.
-#' \code{m} controls the initial magnitude of the steps
+#' @param method if method = 'G' (default), then search is carried out as
+#' described in \href{http://doi.org/10.2307/2532852}{Garthwaite (1996)}. For
+#' longer searches (nperm >= 200,000), method = 'GJ' is recommended and carried
+#' out as outlined in
+#' \href{https://doi.org/10.1198/jcgs.2009.0011}{Garthwaite and Jones (2009)}.
+#' @param m an optional initial magnitude of the steps; if left unspecified,
+#' m defaults to recommended value proposed in Garthwaite and Buckland (1992)
+#' @param k step length multiplier
+#' @param Ps if method = 'GJ', vector of search lengths for each phase (if
+#' unspecified, defaults to recommended values in
+#' \href{https://doi.org/10.1198/jcgs.2009.0011}{Garthwaite and Jones (2009)})
+#' @param n if method = 'GJ', the unweighted averages of the final \code{n}
+#' values are taken as the final CI (if unspecified, defaults to recommended
+#' value in
+#' \href{https://doi.org/10.1198/jcgs.2009.0011}{Garthwaite and Jones (2009)})
+#' @param ... optional arguments to \code{\link[permuter]{update_rm}}
 #' @export
 permci_glm <- function(formula, trtname, runit, strat = NULL,
                        family = gaussian, data, nperm = 1000, nburn = 0,
                        level = 0.95, init, initmethod = 'perm',
-                       ncores = 1, seed, quietly = F, ...) {
+                       ncores = 1, seed, quietly = F,
+                       method = 'G', m, k, Ps = NULL, n, ...) {
   call <- match.call()
   if (ncores > 1) {
     doParallel::registerDoParallel(cores = ncores)
@@ -62,9 +79,44 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
   }
   if (!missing(seed)) set.seed(seed)
 
-  data[, paste0(trtname, ".obs")] <- data[, trtname] # obs trt for offset
-
   alpha <- 1 - level
+
+  # default values for (m, k, Ps, n) if not user-specified
+  if (missing(m)) {
+    m <- min(c(50, ceiling(0.3 * (4 - alpha) / alpha)))
+  } else {
+    if (m < 0)
+      stop("m must be non-negative")
+  }
+  if (missing(k)) {
+    z <- qnorm(1 - (alpha / 2))
+    k <- 2 * sqrt(2 * pi) * exp(z^2 / 2) / z
+  }
+  if (method == 'GJ') {
+    if (is.null(Ps)) {
+      v <- 15
+      P1 <- min(5000, nperm / 20)
+      P2 <- (v - 1) * P1
+      P3 <- nperm - P1 - P2
+      Ps <- c(P1, P2, P3)
+      if (sum((Ps < 1)) > 0)
+        stop("At least one default phase length is negative. Please specify 'Ps' or increase 'nperm'")
+    } else {
+      if (sum(Ps) != nperm)
+        stop("sum(Ps) must be equal to nperm")
+    }
+    P <- sum(Ps)
+    if (missing(n)) {
+      n <- P - 2 * Ps[1]
+    } else {
+      if (n < 1 | n > nperm)
+        stop("n must be an integer between 1 and nperm")
+    }
+  } else if (method == 'G') {
+    n <- 1 # not used
+  }
+
+  data[, paste0(trtname, ".obs")] <- data[, trtname] # obs trt for offset
 
   # get lower/upper with GLM norm approx
   m1 <- glm(formula = formula, family = family, data = data)
@@ -82,8 +134,7 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
     } else if (initmethod == 'perm') {
       # initialize using quick randomization test of H0: theta = obs1,
       # as recommended in Garthwaite (1996)
-      g.alpha <- alpha / 2 # alpha as defined in Garthwaite paper
-      nperm_init <- ceiling((2 - g.alpha) / g.alpha)
+      nperm_init <- ceiling((4 - alpha) / alpha)
       data$obs1 <- obs1
       formula.tmp <- update(formula,
                   as.formula(paste0("~ . + offset(", trtname, ".obs * obs1)")))
@@ -127,8 +178,7 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
 
         # update using Robbins-Monro step
         ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
-        low <- update_rm(init = low, thetahat = obs1, t, tstar, alpha, ii,
-                         bound = "lower", ...)
+        low <- update_rm(method, low, obs1, t, tstar, alpha, ii, m, k, Ps, bound = "lower", ...)
         data$low <- low
         low.vec[i] <- low
 
@@ -156,8 +206,7 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
 
         # update using Robbins-Monro step
         ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
-        up <- update_rm(init = up, thetahat = obs1, t, tstar, alpha, ii,
-                        bound = "upper", ...)
+        up <- update_rm(method, up, obs1, t, tstar, alpha, ii, m, k, Ps, bound = "upper", ...)
         data$up <- up
         up.vec[i] <- up
 
@@ -179,7 +228,15 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
 
   if (missing(seed)) seed <- NA
   dimnames(trace)[[2]] <- c("lower", "upper")
-  out <- list(ci = c(trace[nperm + nburn, 1], trace[nperm + nburn, 2]),
+  if (method == 'G' | n == 1) {
+    # choose last update
+    ci <- c(trace[nperm + nburn, 1], trace[nperm + nburn, 2])
+  } else if (method == 'GJ') {
+    # average last n updates
+    trace_n <- trace[(nperm + nburn - n + 1):(nperm + nburn), ]
+    ci <- apply(trace_n, 2, mean)
+  }
+  out <- list(ci = ci,
               trace = trace,
               init = inits,
               call = call,
@@ -204,7 +261,8 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
 permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
                          nperm = 1000, nburn = 0,
                          level = 0.95, init, initmethod = 'perm',
-                         ncores = 1, seed, quietly = F, ...) {
+                         ncores = 1, seed, quietly = F,
+                         method = 'G', m, k, Ps = NULL, n, ...) {
   if (ncores > 1) {
     doParallel::registerDoParallel(cores = ncores)
   } else {
@@ -212,9 +270,44 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
   }
   if (!missing(seed)) set.seed(seed)
 
-  data[, paste0(trtname, ".obs")] <- data[, trtname] # obs trt for offset
-
   alpha <- 1 - level
+
+  # default values for (m, k, Ps, n) if not user-specified
+  if (missing(m)) {
+    m <- min(c(50, ceiling(0.3 * (4 - alpha) / alpha)))
+  } else {
+    if (m < 0)
+      stop("m must be non-negative")
+  }
+  if (missing(k)) {
+    z <- qnorm(1 - (alpha / 2))
+    k <- 2 * sqrt(2 * pi) * exp(z^2 / 2) / z
+  }
+  if (method == 'GJ') {
+    if (is.null(Ps)) {
+      v <- 15
+      P1 <- min(5000, nperm / 20)
+      P2 <- (v - 1) * P1
+      P3 <- nperm - P1 - P2
+      Ps <- c(P1, P2, P3)
+      if (sum((Ps < 1)) > 0)
+        stop("At least one default phase length is negative. Please specify 'Ps' or increase 'nperm'")
+    } else {
+      if (sum(Ps) != nperm)
+        stop("sum(Ps) must be equal to nperm")
+    }
+    P <- sum(Ps)
+    if (missing(n)) {
+      n <- P - 2 * Ps[1]
+    } else {
+      if (n < 1 | n > nperm)
+        stop("n must be an integer between 1 and nperm")
+    }
+  } else if (method == 'G') {
+    n <- 1 # not used
+  }
+
+  data[, paste0(trtname, ".obs")] <- data[, trtname] # obs trt for offset
 
   # get lower/upper with weibull model for interval censored
   m1 <- survival::survreg(formula = formula, data = data)
@@ -239,8 +332,7 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
     } else if (initmethod == 'perm') {
       # initialize using quick randomization test of H0: theta = obs1,
       # as recommended in Garthwaite (1996)
-      g.alpha <- alpha / 2 # alpha as defined in Garthwaite paper
-      nperm_init <- ceiling((2 - g.alpha) / g.alpha)
+      nperm_init <- ceiling((4 - alpha) / alpha)
       data$obs1 <- obs1
       formula.tmp <- update(formula,
                   as.formula(paste0("~ . + offset(", trtname, ".obs * obs1)")))
@@ -282,8 +374,7 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
 
         # update using Robbins-Monro step
         ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
-        low <- update_rm(init = low, thetahat = obs1, t, tstar, alpha, ii,
-                         bound = "lower", ...)
+        low <- update_rm(method, low, obs1, t, tstar, alpha, ii, m, k, Ps, bound = "lower", ...)
         data$low <- low
         low.vec[i] <- low
 
@@ -311,8 +402,7 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
 
         # update using Robbins-Monro step
         ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
-        up <- update_rm(init = up, thetahat = obs1, t, tstar, alpha, ii,
-                        bound = "upper", ...)
+        up <- update_rm(method, up, obs1, t, tstar, alpha, ii, m, k, Ps, bound = "upper", ...)
         data$up <- up
         up.vec[i] <- up
 
@@ -334,7 +424,15 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
 
   if (missing(seed)) seed <- NA
   dimnames(trace)[[2]] <- c("lower", "upper")
-  out <- list(ci = c(trace[nperm + nburn, 1], trace[nperm + nburn, 2]),
+  if (method == 'G' | n == 1) {
+    # choose last update
+    ci <- c(trace[nperm + nburn, 1], trace[nperm + nburn, 2])
+  } else if (method == 'GJ') {
+    # average last n updates
+    trace_n <- trace[(nperm + nburn - n + 1):(nperm + nburn), ]
+    ci <- apply(trace_n, 2, mean)
+  }
+  out <- list(ci = ci,
               trace = trace,
               init = inits,
               call = call,
@@ -359,7 +457,8 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
 permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
                            dist = "weibull", nperm = 1000, nburn = 0,
                            level = 0.95, init, initmethod = 'perm',
-                           ncores = 1, seed, quietly = F, ...) {
+                           ncores = 1, seed, quietly = F,
+                           method = 'G', m, k, Ps = NULL, n, ...) {
   if (ncores > 1) {
     doParallel::registerDoParallel(cores = ncores)
   } else {
@@ -367,9 +466,44 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
   }
   if (!missing(seed)) set.seed(seed)
 
-  data[, paste0(trtname, ".obs")] <- data[, trtname] # obs trt for offset
-
   alpha <- 1 - level
+
+  # default values for (m, k, Ps, n) if not user-specified
+  if (missing(m)) {
+    m <- min(c(50, ceiling(0.3 * (4 - alpha) / alpha)))
+  } else {
+    if (m < 0)
+      stop("m must be non-negative")
+  }
+  if (missing(k)) {
+    z <- qnorm(1 - (alpha / 2))
+    k <- 2 * sqrt(2 * pi) * exp(z^2 / 2) / z
+  }
+  if (method == 'GJ') {
+    if (is.null(Ps)) {
+      v <- 15
+      P1 <- min(5000, nperm / 20)
+      P2 <- (v - 1) * P1
+      P3 <- nperm - P1 - P2
+      Ps <- c(P1, P2, P3)
+      if (sum((Ps < 1)) > 0)
+        stop("At least one default phase length is negative. Please specify 'Ps' or increase 'nperm'")
+    } else {
+      if (sum(Ps) != nperm)
+        stop("sum(Ps) must be equal to nperm")
+    }
+    P <- sum(Ps)
+    if (missing(n)) {
+      n <- P - 2 * Ps[1]
+    } else {
+      if (n < 1 | n > nperm)
+        stop("n must be an integer between 1 and nperm")
+    }
+  } else if (method == 'G') {
+    n <- 1 # not used
+  }
+
+  data[, paste0(trtname, ".obs")] <- data[, trtname] # obs trt for offset
 
   # get lower/upper with survival::survreg
   m1 <- survival::survreg(formula = formula, data = data, dist = dist)
@@ -387,8 +521,7 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
     } else if (initmethod == 'perm') {
       # initialize using quick randomization test of H0: theta = obs1,
       # as recommended in Garthwaite (1996)
-      g.alpha <- alpha / 2 # alpha as defined in Garthwaite paper
-      nperm_init <- ceiling((2 - g.alpha) / g.alpha)
+      nperm_init <- ceiling((4 - alpha) / alpha)
       data$obs1 <- obs1
       formula.tmp <- update(formula,
                   as.formula(paste0("~ . + offset(", trtname, ".obs * obs1)")))
@@ -431,8 +564,7 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
 
         # update using Robbins-Monro step
         ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
-        low <- update_rm(init = low, thetahat = obs1, t, tstar, alpha, ii,
-                         bound = "lower", ...)
+        low <- update_rm(method, low, obs1, t, tstar, alpha, ii, m, k, Ps, bound = "lower", ...)
         data$low <- low
         low.vec[i] <- low
 
@@ -461,8 +593,7 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
 
         # update using Robbins-Monro step
         ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
-        up <- update_rm(init = up, thetahat = obs1, t, tstar, alpha, ii,
-                        bound = "upper", ...)
+        up <- update_rm(method, up, obs1, t, tstar, alpha, ii, m, k, Ps, bound = "upper", ...)
         data$up <- up
         up.vec[i] <- up
 
@@ -484,7 +615,15 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
 
   if (missing(seed)) seed <- NA
   dimnames(trace)[[2]] <- c("lower", "upper")
-  out <- list(ci = c(trace[nperm + nburn, 1], trace[nperm + nburn, 2]),
+  if (method == 'G' | n == 1) {
+    # choose last update
+    ci <- c(trace[nperm + nburn, 1], trace[nperm + nburn, 2])
+  } else if (method == 'GJ') {
+    # average last n updates
+    trace_n <- trace[(nperm + nburn - n + 1):(nperm + nburn), ]
+    ci <- apply(trace_n, 2, mean)
+  }
+  out <- list(ci = ci,
               trace = trace,
               init = inits,
               call = call,
@@ -509,7 +648,8 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
 permci_coxph <- function(formula, trtname, runit, strat = NULL, data,
                            nperm = 1000, nburn = 0,
                            level = 0.95, init, initmethod = 'perm',
-                           ncores = 1, seed, quietly = F, ...) {
+                           ncores = 1, seed, quietly = F,
+                           method = 'G', m, k, Ps = NULL, n, ...) {
   if (ncores > 1) {
     doParallel::registerDoParallel(cores = ncores)
   } else {
@@ -517,9 +657,44 @@ permci_coxph <- function(formula, trtname, runit, strat = NULL, data,
   }
   if (!missing(seed)) set.seed(seed)
 
-  data[, paste0(trtname, ".obs")] <- data[, trtname] # obs trt for offset
-
   alpha <- 1 - level
+
+  # default values for (m, k, Ps, n) if not user-specified
+  if (missing(m)) {
+    m <- min(c(50, ceiling(0.3 * (4 - alpha) / alpha)))
+  } else {
+    if (m < 0)
+      stop("m must be non-negative")
+  }
+  if (missing(k)) {
+    z <- qnorm(1 - (alpha / 2))
+    k <- 2 * sqrt(2 * pi) * exp(z^2 / 2) / z
+  }
+  if (method == 'GJ') {
+    if (is.null(Ps)) {
+      v <- 15
+      P1 <- min(5000, nperm / 20)
+      P2 <- (v - 1) * P1
+      P3 <- nperm - P1 - P2
+      Ps <- c(P1, P2, P3)
+      if (sum((Ps < 1)) > 0)
+        stop("At least one default phase length is negative. Please specify 'Ps' or increase 'nperm'")
+    } else {
+      if (sum(Ps) != nperm)
+        stop("sum(Ps) must be equal to nperm")
+    }
+    P <- sum(Ps)
+    if (missing(n)) {
+      n <- P - 2 * Ps[1]
+    } else {
+      if (n < 1 | n > nperm)
+        stop("n must be an integer between 1 and nperm")
+    }
+  } else if (method == 'G') {
+    n <- 1 # not used
+  }
+
+  data[, paste0(trtname, ".obs")] <- data[, trtname] # obs trt for offset
 
   # get lower/upper with survival::coxph
   m1 <- survival::coxph(formula = formula, data = data)
@@ -537,8 +712,7 @@ permci_coxph <- function(formula, trtname, runit, strat = NULL, data,
     } else if (initmethod == 'perm') {
       # initialize using quick randomization test of H0: theta = obs1,
       # as recommended in Garthwaite (1996)
-      g.alpha <- alpha / 2 # alpha as defined in Garthwaite paper
-      nperm_init <- ceiling((2 - g.alpha) / g.alpha)
+      nperm_init <- ceiling((4 - alpha) / alpha)
       data$obs1 <- obs1
       formula.tmp <- update(formula,
                             as.formula(paste0("~ . + offset(", trtname, ".obs * obs1)")))
@@ -580,8 +754,7 @@ permci_coxph <- function(formula, trtname, runit, strat = NULL, data,
 
         # update using Robbins-Monro step
         ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
-        low <- update_rm(init = low, thetahat = obs1, t, tstar, alpha, ii,
-                         bound = "lower", ...)
+        low <- update_rm(method, low, obs1, t, tstar, alpha, ii, m, k, Ps, bound = "lower", ...)
         data$low <- low
         low.vec[i] <- low
 
@@ -609,8 +782,7 @@ permci_coxph <- function(formula, trtname, runit, strat = NULL, data,
 
         # update using Robbins-Monro step
         ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
-        up <- update_rm(init = up, thetahat = obs1, t, tstar, alpha, ii,
-                        bound = "upper", ...)
+        up <- update_rm(method, up, obs1, t, tstar, alpha, ii, m, k, Ps, bound = "upper", ...)
         data$up <- up
         up.vec[i] <- up
 
@@ -632,7 +804,15 @@ permci_coxph <- function(formula, trtname, runit, strat = NULL, data,
 
   if (missing(seed)) seed <- NA
   dimnames(trace)[[2]] <- c("lower", "upper")
-  out <- list(ci = c(trace[nperm + nburn, 1], trace[nperm + nburn, 2]),
+  if (method == 'G' | n == 1) {
+    # choose last update
+    ci <- c(trace[nperm + nburn, 1], trace[nperm + nburn, 2])
+  } else if (method == 'GJ') {
+    # average last n updates
+    trace_n <- trace[(nperm + nburn - n + 1):(nperm + nburn), ]
+    ci <- apply(trace_n, 2, mean)
+  }
+  out <- list(ci = ci,
               trace = trace,
               init = inits,
               call = call,

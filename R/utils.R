@@ -41,11 +41,17 @@ permute <- function(data, trtname, runit, strat = NULL) {
 #'
 #' This function inputs values necessary to perform one update using the
 #' Robbins-Monro search procedure specific to confidence intervals proposed by
-#' \href{http://doi.org/10.2307/2532852}{Garthwaite (1996)}. Most of the
-#' parameter names are consistent with the notation in
-#' \href{http://doi.org/10.2307/2532852}{Garthwaite (1996)}. This is a general
-#' utility function used within test and confidence interval functions.
+#' \href{http://doi.org/10.2307/2532852}{Garthwaite (1996)} (for method = 'G')
+#' and
+#' \href{https://doi.org/10.1198/jcgs.2009.0011}{Garthwaite and Jones (2009)}
+#' (for method = 'GJ'). This is a general utility function called within
+#' the confidence interval functions (e.g permci_glm()).
 #'
+#' @param method if method = 'G' (default), then search is carried out as
+#' described in \href{http://doi.org/10.2307/2532852}{Garthwaite (1996)}. For
+#' longer searches (nperm >= 200,000), method = 'GJ' is recommended and carried
+#' out as outlined in
+#' \href{https://doi.org/10.1198/jcgs.2009.0011}{Garthwaite and Jones (2009)}.
 #' @param init initial (or most recent) estimate (e.g. L_i or U_i)
 #' @param thetahat point estimate of theta (parameter of interest) based on
 #' original data
@@ -55,33 +61,50 @@ permute <- function(data, trtname, runit, strat = NULL) {
 #' @param i iteration of the search process
 #' @param m an optional initial magnitude of the steps; if left unspecified,
 #' m defaults to recommended value proposed in Garthwaite and Buckland (1992)
+#' @param k step length multiplier
+#' @param Ps if method = 'GJ', vector of search lengths for each phase (if
+#' unspecified, defaults to recommended values in
+#' \href{https://doi.org/10.1198/jcgs.2009.0011}{Garthwaite and Jones (2009)})
 #' @param bound "lower" or "upper"; i.e. which confidence bound you want
-update_rm <- function(init, thetahat, t, tstar, alpha, i, m, bound) {
+update_rm <- function(method, init, thetahat, t, tstar, alpha, i, m, k, Ps,
+                      bound) {
   if (!(bound %in% c("lower", "upper")))
     stop("please choose 'lower' or 'upper' for bound")
 
-  g.alpha <- alpha / 2 # alpha as defined in Garthwaite paper
-  # "m" defaults to suggestion in Garthwaite and Buckland 92
-  if (missing(m))
-    m <- min(c(50, ceiling(0.3 * (2 - g.alpha) / g.alpha)))
-
-  # k for c length constant
-  z <- qnorm(1 - g.alpha)
-  k <- 2 * sqrt(2 * pi) * exp(z^2 / 2) / z
-
+  # step length constant
   if (bound == "lower") {
     c <- k * (thetahat - init)
-    if (t < tstar) {
-      out <- init + (c * g.alpha / (m + i - 1))
+  } else {
+    c <- k * (init - thetahat)
+  }
+
+  # step size depends on method/phase/step
+  if (method == 'G') {
+    a <- c / (m + i)
+  } else if (method == 'GJ') {
+    if (i < Ps[1]) {
+      # Phase 1
+      a <- c / (m + i)
+    } else if (i < Ps[1] + Ps[2]) {
+      # Phase 2
+      a <- c / (m + Ps[1])
     } else {
-      out <- init - (c * (1 - g.alpha) / (m + i - 1))
+      # Phase 3
+      a <- c / ((m + i) * (m + Ps[1]) / (m + Ps[1] + Ps[2]))
+    }
+  }
+
+  if (bound == "lower") {
+    if (t < tstar) {
+      out <- init + a * (alpha / 2)
+    } else {
+      out <- init - a * (1 - (alpha / 2))
     }
   } else if (bound == "upper") {
-    c <- k * (init - thetahat)
     if (t > tstar) {
-      out <- init - (c * g.alpha / (m + i - 1))
+      out <- init - a * (alpha / 2)
     } else {
-      out <- init + (c * (1 - g.alpha) / (m + i - 1))
+      out <- init + a * (1 - (alpha / 2))
     }
   }
 

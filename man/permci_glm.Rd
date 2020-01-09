@@ -5,23 +5,25 @@
 \alias{permci_ic_sp}
 \alias{permci_survreg}
 \alias{permci_coxph}
-\title{Randomization CI for regression}
+\title{Randomization-Basd CI for regression}
 \usage{
 permci_glm(formula, trtname, runit, strat = NULL, family = gaussian,
   data, nperm = 1000, nburn = 0, level = 0.95, init,
-  initmethod = "perm", ncores = 1, seed, quietly = F, ...)
+  initmethod = "perm", ncores = 1, seed, quietly = F, method = "G",
+  m, k, Ps = NULL, n, ...)
 
 permci_ic_sp(formula, trtname, runit, strat = NULL, data, nperm = 1000,
   nburn = 0, level = 0.95, init, initmethod = "perm", ncores = 1,
-  seed, quietly = F, ...)
+  seed, quietly = F, method = "G", m, k, Ps = NULL, n, ...)
 
 permci_survreg(formula, trtname, runit, strat = NULL, data,
   dist = "weibull", nperm = 1000, nburn = 0, level = 0.95, init,
-  initmethod = "perm", ncores = 1, seed, quietly = F, ...)
+  initmethod = "perm", ncores = 1, seed, quietly = F, method = "G",
+  m, k, Ps = NULL, n, ...)
 
 permci_coxph(formula, trtname, runit, strat = NULL, data, nperm = 1000,
   nburn = 0, level = 0.95, init, initmethod = "perm", ncores = 1,
-  seed, quietly = F, ...)
+  seed, quietly = F, method = "G", m, k, Ps = NULL, n, ...)
 }
 \arguments{
 \item{formula}{an object of class "\code{\link[stats]{formula}}"
@@ -78,8 +80,27 @@ lower and upper bound search procedures run in parallel across 2 cores.}
 \item{quietly}{logical; if TRUE (and if ncores == 1), status updates will be
 printed to Console otherwise, suppress updates.}
 
-\item{...}{optional arguments to \code{\link[permuter]{update_rm}}, e.g.
-\code{m} controls the initial magnitude of the steps}
+\item{method}{if method = 'G' (default), then search is carried out as
+described in \href{http://doi.org/10.2307/2532852}{Garthwaite (1996)}. For
+longer searches (nperm >= 200,000), method = 'GJ' is recommended and carried
+out as outlined in
+\href{https://doi.org/10.1198/jcgs.2009.0011}{Garthwaite and Jones (2009)}.}
+
+\item{m}{an optional initial magnitude of the steps; if left unspecified,
+m defaults to recommended value proposed in Garthwaite and Buckland (1992)}
+
+\item{k}{step length multiplier}
+
+\item{Ps}{if method = 'GJ', vector of search lengths for each phase (if
+unspecified, defaults to recommended values in
+\href{https://doi.org/10.1198/jcgs.2009.0011}{Garthwaite and Jones (2009)})}
+
+\item{n}{if method = 'GJ', the unweighted averages of the final \code{n}
+values are taken as the final CI (if unspecified, defaults to recommended
+value in
+\href{https://doi.org/10.1198/jcgs.2009.0011}{Garthwaite and Jones (2009)})}
+
+\item{...}{optional arguments to \code{\link[permuter]{update_rm}}}
 
 \item{dist}{assumed distribution for y variable. If the argument is a
 character string, then it is assumed to name an element from
@@ -89,16 +110,18 @@ Otherwise, it is assumed to be a user defined list conforming to the format
 described in \code{\link[survival]{survreg.distributions}}.}
 }
 \description{
-Calculate a randomization confidence interval (CI) for a regression parameter.
+Calculate a randomization-based confidence interval (CI) for a regression
+parameter.
 }
 \details{
-These functions are used to calculate randomization confidence intervals (CI)
-for a regression parameter. These CIs correspond to inverting randomization
-tests by using an offset to test non-zero "null" values. To invert the
-randomization test, these functions use a computationally efficient CI
-algorithm proposed by
-\href{http://doi.org/10.2307/2532852}{Garthwaite (1996)}, which is based on
-the Robbins-Monro search process.
+These functions are used to calculate randomization-based confidence
+intervals (CI) for a regression parameter. These CIs correspond to inverting
+randomization tests by using an offset to test non-zero "null" values
+(Rabideau and Wang). To invert the randomization test, these functions adapt
+a computationally efficient CI algorithm based on the Robbins-Monro search
+process. Two methods can be used and correspond to
+\href{http://doi.org/10.2307/2532852}{Garthwaite (1996)} and
+\href{https://doi.org/10.1198/jcgs.2009.0011}{Garthwaite and Jones (2009)}.
 
 Different functions
 corrrespond to different regression models:

@@ -14,5 +14,7 @@
 }
 \description{
 This function takes a permci object and produces plots to monitor convergence
-of each randomization-based confidence interval bound.
+of each randomization-based confidence interval bound. The search values are
+indicated by black lines, initial values an x, final update an o, estimated
+CI values by red horizontal lines.
 }
