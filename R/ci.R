@@ -1,4 +1,4 @@
-#' Randomization-Basd CI for regression
+#' Randomization-Based CI for regression
 #'
 #' Calculate a randomization-based confidence interval (CI) for a regression
 #' parameter.
