@@ -110,3 +110,58 @@ update_rm <- function(method, init, thetahat, t, tstar, alpha, i, m, k, Ps,
 
   return(out)
 }
+
+#' Get initial values for CI search
+#'
+#' \code{getinits} returns initial values for CI search, \code{c(lower, upper)}
+#'
+#' If \code{initmethod = "asymp"}, initial bounds are based on asymptotic
+#' approximation (e.g. Wald CI for GLM). If \code{initmethod = "perm"}, initial
+#' bounds are based on the permutation approach used in Garthwaite (1996) with
+#' \eqn{\hat{\theta}\pm \{(t_2 - t_1)/2\}}, where \eqn{t_1} and \eqn{t_2} denote
+#' the second smallest and second largest estimates from the permutation test.
+#'
+#' This is a general utility function used within \code{permci}.
+#'
+getInits <- function(model, trtname, runit, strat, data, initmethod, alpha, obs1) {
+  if (initmethod == 'asymp') {
+    if (sum(c('glm', 'survreg', 'coxph') %in% class(model)) > 0) {
+      Vcov <- vcov(model, useScale = FALSE)
+      trt.se <- sqrt(Vcov[trtname, trtname])
+      lower <- obs1 - qnorm(1 - alpha / 2) * trt.se
+      upper <- obs1 + qnorm(1 - alpha / 2) * trt.se
+      return(c(lower, upper))
+    } else {
+      stop(paste0("initmethod = '", initmethod,
+                  "' not available for class(model)='", paste(class(model), collapse = ', '),
+                  "'. Please provide starting values with 'init'"))
+    }
+
+  } else if (initmethod == 'perm') {
+    if (sum(c('glm', 'survreg', 'coxph') %in% class(model)) > 0) {
+      # initialize using quick randomization test of H0: theta = obs1,
+      # as recommended in Garthwaite (1996)
+      nperm_init <- ceiling((4 - alpha) / alpha)
+      data$obs1 <- obs1
+      formula.tmp <- update(model$formula,
+                  as.formula(paste0("~ . + offset(", trtname, ".obs * obs1)")))
+      perm.stat <- foreach::foreach(i = 1:nperm_init, .combine = c) %dorng% {
+        data.tmp <- permute(data, trtname, runit, strat) # permuted data
+        model.tmp <- update(model, formula. = formula.tmp, data = data.tmp) # fit
+        as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
+      }
+      t1 <- sort(perm.stat)[2] # 2nd to smallest
+      t2 <- sort(perm.stat)[nperm_init - 1] # 2nd to largest
+      lower <- obs1 - ((t2 - t1) / 2)
+      upper <- obs1 + ((t2 - t1) / 2)
+      return(c(lower, upper))
+    } else {
+      stop(paste0("initmethod = '", initmethod,
+                  "' not available for class(model)='", paste(class(model), collapse = ', '),
+                  "'. Please provide starting values with 'init'"))
+    }
+  } else {
+      print(initmethod)
+      stop("'initmethod' not recognized")
+  }
+}

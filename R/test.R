@@ -9,18 +9,21 @@
 #' \itemize{
 #'   \item \code{permtest_glm}: randomization test based on
 #'   \code{\link[stats]{glm}}
-#'   \item \code{permtest_glmer}: randomization test based on
-#'   \code{\link[lme4]{glmer}}
-#'   \item \code{permtest_ic_sp}: randomization test based on
-#'   \code{\link[icenReg]{ic_sp}}
 #'   \item \code{permtest_survreg}: randomization test based on
 #'   \code{\link[survival]{survreg}}
 #'   \item \code{permtest_coxph}: randomization test based on
 #'   \code{\link[survival]{coxph}}
+#'   \item \code{permtest_ic_sp}: randomization test based on
+#'   \code{\link[icenReg]{ic_sp}}
 #' }
 #' To ensure correct specification of the parameters passed to the models above
 #' (e.g. \code{formula} in \code{\link[icenReg]{ic_sp}}), please refer to their
 #' documentation.
+#'
+#' @seealso \code{\link[permuter]{permci_glm}},
+#' \code{\link[permuter]{permci_survreg}}, \code{\link[permuter]{permci_coxph}},
+#' \code{\link[permuter]{permci_ic_sp}} for corresponding randomization-based
+#' CIs
 #'
 #' @param formula an object of class "\code{\link[stats]{formula}}"
 #' (or one that can be coerced to that class): a symbolic description of the
@@ -253,6 +256,8 @@ permtest_coxph <- function(formula, trtname, runit, strat = NULL, data,
 #'
 #' Carry out a randomization test for a treatment effect using a user defined
 #' test statistic.
+#'
+#' @seealso \code{\link[permuter]{permci}} for a randomization-based CI
 #'
 #' @param f a function, which when applied to \code{data} returns the observed
 #' univariate test statistic. This function can be as simple or complex as

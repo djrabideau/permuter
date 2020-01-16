@@ -2,6 +2,7 @@
 
 S3method(plot,permci)
 export(gendata_crt)
+export(permci)
 export(permci_coxph)
 export(permci_glm)
 export(permci_ic_sp)

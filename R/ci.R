@@ -1,7 +1,7 @@
 #' Randomization-Based CI for regression
 #'
 #' Calculate a randomization-based confidence interval (CI) for a regression
-#' parameter.
+#' parameter from a particular regression model, see Details.
 #'
 #' These functions are used to calculate randomization-based confidence
 #' intervals (CI) for a regression parameter. These CIs correspond to inverting
@@ -12,21 +12,26 @@
 #' \href{http://doi.org/10.2307/2532852}{Garthwaite (1996)} and
 #' \href{https://doi.org/10.1198/jcgs.2009.0011}{Garthwaite and Jones (2009)}.
 #'
-#' Different functions
-#' corrrespond to different regression models:
+#' These functions corrrespond to particular regression models:
 #' \itemize{
 #'   \item \code{permci_glm}: randomization CI based on
 #'   \code{\link[stats]{glm}}
-#'   \item \code{permci_ic_sp}: randomization CI based on
-#'   \code{\link[icenReg]{ic_sp}}
-#'   \item \code{permci_survival::survreg}: randomization CI based on
+#'   \item \code{permci_survreg}: randomization CI based on
 #'   \code{\link[survival]{survreg}}
 #'   \item \code{permci_coxph}: randomization CI based on
 #'   \code{\link[survival]{coxph}}
+#'   \item \code{permci_ic_sp}: randomization CI based on
+#'   \code{\link[icenReg]{ic_sp}}
 #' }
 #' To ensure correct specification of the parameters passed to the models above
 #' (e.g. \code{formula} in \code{\link[icenReg]{ic_sp}}), please refer to their
 #' documentation.
+#'
+#' @seealso \code{\link[permuter]{permci}} for a more general CI function;
+#' \code{\link[permuter]{permci_glm}},
+#' \code{\link[permuter]{permci_survreg}}, \code{\link[permuter]{permci_coxph}},
+#' \code{\link[permuter]{permci_ic_sp}} for corresponding randomization-based
+#' CIs
 #'
 #' @inheritParams permtest_glm
 #' @param level two-sided confidence level (e.g. level = 0.95 for 95\% CI)
@@ -64,13 +69,12 @@
 #' values are taken as the final CI (if unspecified, defaults to recommended
 #' value in
 #' \href{https://doi.org/10.1198/jcgs.2009.0011}{Garthwaite and Jones (2009)})
-#' @param ... optional arguments to \code{\link[permuter]{update_rm}}
 #' @export
 permci_glm <- function(formula, trtname, runit, strat = NULL,
                        family = gaussian, data, nperm = 1000, nburn = 0,
                        level = 0.95, init, initmethod = 'perm',
                        ncores = 1, seed, quietly = F,
-                       method = 'G', m, k, Ps = NULL, n, ...) {
+                       method = 'G', m, k, Ps = NULL, n) {
   call <- match.call()
   if (ncores > 1) {
     doParallel::registerDoParallel(cores = ncores)
@@ -178,7 +182,7 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
 
         # update using Robbins-Monro step
         ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
-        low <- update_rm(method, low, obs1, t, tstar, alpha, ii, m, k, Ps, bound = "lower", ...)
+        low <- update_rm(method, low, obs1, t, tstar, alpha, ii, m, k, Ps, bound = "lower")
         data$low <- low
         low.vec[i] <- low
 
@@ -206,7 +210,7 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
 
         # update using Robbins-Monro step
         ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
-        up <- update_rm(method, up, obs1, t, tstar, alpha, ii, m, k, Ps, bound = "upper", ...)
+        up <- update_rm(method, up, obs1, t, tstar, alpha, ii, m, k, Ps, bound = "upper")
         data$up <- up
         up.vec[i] <- up
 
@@ -249,7 +253,12 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
                 level = level,
                 initmethod = initmethod,
                 ncores = ncores,
-                seed = seed
+                seed = seed,
+                method = method,
+                m = m,
+                k = k,
+                Ps = Ps,
+                n = n
               ))
   class(out) <- 'permci'
   return(out)
@@ -262,7 +271,7 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
                          nperm = 1000, nburn = 0,
                          level = 0.95, init, initmethod = 'perm',
                          ncores = 1, seed, quietly = F,
-                         method = 'G', m, k, Ps = NULL, n, ...) {
+                         method = 'G', m, k, Ps = NULL, n) {
   if (ncores > 1) {
     doParallel::registerDoParallel(cores = ncores)
   } else {
@@ -374,7 +383,7 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
 
         # update using Robbins-Monro step
         ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
-        low <- update_rm(method, low, obs1, t, tstar, alpha, ii, m, k, Ps, bound = "lower", ...)
+        low <- update_rm(method, low, obs1, t, tstar, alpha, ii, m, k, Ps, bound = "lower")
         data$low <- low
         low.vec[i] <- low
 
@@ -402,7 +411,7 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
 
         # update using Robbins-Monro step
         ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
-        up <- update_rm(method, up, obs1, t, tstar, alpha, ii, m, k, Ps, bound = "upper", ...)
+        up <- update_rm(method, up, obs1, t, tstar, alpha, ii, m, k, Ps, bound = "upper")
         data$up <- up
         up.vec[i] <- up
 
@@ -445,7 +454,12 @@ permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
                 level = level,
                 initmethod = initmethod,
                 ncores = ncores,
-                seed = seed
+                seed = seed,
+                method = method,
+                m = m,
+                k = k,
+                Ps = Ps,
+                n = n
               ))
   class(out) <- 'permci'
   return(out)
@@ -458,7 +472,7 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
                            dist = "weibull", nperm = 1000, nburn = 0,
                            level = 0.95, init, initmethod = 'perm',
                            ncores = 1, seed, quietly = F,
-                           method = 'G', m, k, Ps = NULL, n, ...) {
+                           method = 'G', m, k, Ps = NULL, n) {
   if (ncores > 1) {
     doParallel::registerDoParallel(cores = ncores)
   } else {
@@ -564,7 +578,7 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
 
         # update using Robbins-Monro step
         ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
-        low <- update_rm(method, low, obs1, t, tstar, alpha, ii, m, k, Ps, bound = "lower", ...)
+        low <- update_rm(method, low, obs1, t, tstar, alpha, ii, m, k, Ps, bound = "lower")
         data$low <- low
         low.vec[i] <- low
 
@@ -593,7 +607,7 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
 
         # update using Robbins-Monro step
         ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
-        up <- update_rm(method, up, obs1, t, tstar, alpha, ii, m, k, Ps, bound = "upper", ...)
+        up <- update_rm(method, up, obs1, t, tstar, alpha, ii, m, k, Ps, bound = "upper")
         data$up <- up
         up.vec[i] <- up
 
@@ -636,7 +650,12 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
                 level = level,
                 initmethod = initmethod,
                 ncores = ncores,
-                seed = seed
+                seed = seed,
+                method = method,
+                m = m,
+                k = k,
+                Ps = Ps,
+                n = n
               ))
   class(out) <- 'permci'
   return(out)
@@ -649,7 +668,7 @@ permci_coxph <- function(formula, trtname, runit, strat = NULL, data,
                            nperm = 1000, nburn = 0,
                            level = 0.95, init, initmethod = 'perm',
                            ncores = 1, seed, quietly = F,
-                           method = 'G', m, k, Ps = NULL, n, ...) {
+                           method = 'G', m, k, Ps = NULL, n) {
   if (ncores > 1) {
     doParallel::registerDoParallel(cores = ncores)
   } else {
@@ -754,7 +773,7 @@ permci_coxph <- function(formula, trtname, runit, strat = NULL, data,
 
         # update using Robbins-Monro step
         ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
-        low <- update_rm(method, low, obs1, t, tstar, alpha, ii, m, k, Ps, bound = "lower", ...)
+        low <- update_rm(method, low, obs1, t, tstar, alpha, ii, m, k, Ps, bound = "lower")
         data$low <- low
         low.vec[i] <- low
 
@@ -782,7 +801,7 @@ permci_coxph <- function(formula, trtname, runit, strat = NULL, data,
 
         # update using Robbins-Monro step
         ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
-        up <- update_rm(method, up, obs1, t, tstar, alpha, ii, m, k, Ps, bound = "upper", ...)
+        up <- update_rm(method, up, obs1, t, tstar, alpha, ii, m, k, Ps, bound = "upper")
         data$up <- up
         up.vec[i] <- up
 
@@ -825,7 +844,206 @@ permci_coxph <- function(formula, trtname, runit, strat = NULL, data,
                 level = level,
                 initmethod = initmethod,
                 ncores = ncores,
-                seed = seed
+                seed = seed,
+                method = method,
+                m = m,
+                k = k,
+                Ps = Ps,
+                n = n
+              ))
+  class(out) <- 'permci'
+  return(out)
+}
+
+#' Randomization-Based CI for regression
+#'
+#' Calculate a randomization-based confidence interval (CI) for a regression
+#' parameter.
+#'
+#' This function is used to calculate randomization-based confidence
+#' intervals (CI) for a regression parameter. These CIs correspond to inverting
+#' randomization tests by using an offset to test non-zero "null" values
+#' (Rabideau and Wang). To invert the randomization test, these functions adapt
+#' a computationally efficient CI algorithm based on the Robbins-Monro search
+#' process. Two methods can be used and correspond to
+#' \href{http://doi.org/10.2307/2532852}{Garthwaite (1996)} and
+#' \href{https://doi.org/10.1198/jcgs.2009.0011}{Garthwaite and Jones (2009)}.
+#'
+#' The argument \code{model} must correspond to a regression model that
+#' accomodates an offset term (see \link[stats]{offset}) and one for which
+#' coefficients can be extracted in the standard way (see \link[stats]{coef}).
+#' E.g. an object of class "glm" (see \link[stats]{glm}), "survreg" (see
+#' \link[survival]{survreg}), "coxph" (see \link[survival]{coxph}), etc.
+#'
+#' @seealso \code{\link[permuter]{permtest}} for a randomization test
+#'
+#' @param model an appropriate fitted model object, see Details
+#' @inheritParams permci_glm
+#' @export
+permci <- function(model, trtname, runit, strat = NULL, data,
+                   nperm = 1000, nburn = 0,
+                   level = 0.95, init, initmethod = 'perm',
+                   ncores = 1, seed, quietly = F,
+                   method = 'G', m, k, Ps = NULL, n) {
+  call <- match.call()
+  if (ncores > 1) {
+    doParallel::registerDoParallel(cores = ncores)
+  } else {
+    foreach::registerDoSEQ()
+  }
+  if (!missing(seed)) set.seed(seed)
+
+  if (level <= 0 | level >= 1)
+    stop(paste0("level = ", level, " outside of (0, 1)"))
+  alpha <- 1 - level
+
+  # default values for (m, k, Ps, n) if not user-specified
+  if (missing(m)) {
+    m <- min(c(50, ceiling(0.3 * (4 - alpha) / alpha)))
+  } else {
+    if (m < 0)
+      stop("m must be non-negative")
+  }
+  if (missing(k)) {
+    z <- qnorm(1 - (alpha / 2))
+    k <- 2 * sqrt(2 * pi) * exp(z^2 / 2) / z
+  }
+  if (method == 'GJ') {
+    if (is.null(Ps)) {
+      v <- 15
+      P1 <- min(5000, nperm / 20)
+      P2 <- (v - 1) * P1
+      P3 <- nperm - P1 - P2
+      Ps <- c(P1, P2, P3)
+      if (sum((Ps < 1)) > 0)
+        stop("At least one default phase length is negative. Please specify 'Ps' or increase 'nperm'")
+    } else {
+      if (sum(Ps) != nperm)
+        stop("sum(Ps) must be equal to nperm")
+    }
+    P <- sum(Ps)
+    if (missing(n)) {
+      n <- P - 2 * Ps[1]
+    } else {
+      if (n < 1 | n > nperm)
+        stop("n must be an integer between 1 and nperm")
+    }
+  } else if (method == 'G') {
+    n <- 1 # not used
+  }
+
+  data[, paste0(trtname, ".obs")] <- data[, trtname] # obs trt for offset
+
+  obs1 <- as.numeric(coef(model)[trtname]) # observed treatment effect estimate
+
+  # initial values for CI search
+  if (missing(init)) {
+    inits <- getInits(model, trtname, runit, strat, data, initmethod, alpha, obs1)
+  } else {
+    if (!is.null(call$initmethod))
+      warning(paste0("user-supplied init overrides initmethod = '", initmethod, "'"))
+    if (init[1] > obs1 | init[2] < obs1)
+      stop(paste0("coef(", call$model, ") = ", round(obs1, 5),
+                  " is outside of init = c(",
+                  paste(init, collapse = ', '), ")"))
+    inits <- init
+  }
+  data$low <- low <- inits[1]
+  data$up <- up <- inits[2]
+
+  # invert test for CI using offset approach
+  trace <- foreach::foreach(j = 1:2, .combine = cbind) %dorng% {
+    if (j == 1) {
+      # search for lower
+      low.vec <- rep(NA, nperm + nburn)
+      formula.tmp <- update(model$formula,
+                  as.formula(paste0("~ . + offset(", trtname, ".obs * low)")))
+      for (i in 1:(nperm + nburn)) {
+
+        # permute based on runit
+        data.tmp <- permute(data, trtname, runit, strat) # permuted data
+        model.tmp <- update(model, formula. = formula.tmp, data = data.tmp) # fit
+        t <- as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
+        tstar <- (obs1 - low) # tx effect estimate from original permutation
+
+        # update using Robbins-Monro step
+        ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
+        low <- update_rm(method, low, obs1, t, tstar, alpha, ii, m, k, Ps, bound = "lower")
+        data$low <- low
+        low.vec[i] <- low
+
+        if (ncores == 1 & !quietly & i %in% seq(ceiling((nperm + nburn) / 10), (nperm + nburn),
+                                  ceiling((nperm + nburn) / 10)))
+          cat(i, "of", (nperm + nburn), "permutations complete\n")
+      }
+      if (ncores == 1 & !quietly) cat("lower bound complete\n")
+      low.vec
+    }
+
+    if (j == 2) {
+      # search for upper
+      up.vec <- rep(NA, nperm + nburn)
+      formula.tmp <- update(model$formula,
+                    as.formula(paste0("~ . + offset(", trtname, ".obs * up)")))
+      for (i in 1:(nperm + nburn)) {
+
+        # permute based on runit
+        data.tmp <- permute(data, trtname, runit, strat) # permuted data
+        model.tmp <- update(model, formula. = formula.tmp, data = data.tmp) # fit
+        t <- as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
+        tstar <- (obs1 - up) # tx effect estimate from original permutation
+
+        # update using Robbins-Monro step
+        ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
+        up <- update_rm(method, up, obs1, t, tstar, alpha, ii, m, k, Ps, bound = "upper")
+        data$up <- up
+        up.vec[i] <- up
+
+        if (ncores == 1 & !quietly & i %in% seq(ceiling((nperm + nburn) / 10), (nperm + nburn),
+                                  ceiling((nperm + nburn) / 10)))
+          cat(i, "of", (nperm + nburn), "permutations complete\n")
+      }
+      if (ncores == 1 & !quietly) cat("upper bound complete\n")
+      up.vec
+    }
+
+    # return these values
+    if (j == 1) {
+      low.vec
+    } else {
+      up.vec
+    }
+  } # end foreach
+
+  if (missing(seed)) seed <- NA
+  dimnames(trace)[[2]] <- c("lower", "upper")
+  if (method == 'G' | n == 1) {
+    # choose last update
+    ci <- c(trace[nperm + nburn, 1], trace[nperm + nburn, 2])
+  } else if (method == 'GJ') {
+    # average last n updates
+    trace_n <- trace[(nperm + nburn - n + 1):(nperm + nburn), ]
+    ci <- apply(trace_n, 2, mean)
+  }
+  out <- list(ci = ci,
+              trace = trace,
+              init = inits,
+              call = call,
+              args = list(
+                trtname = trtname,
+                runit = runit,
+                strat = strat,
+                nperm = nperm,
+                nburn = nburn,
+                level = level,
+                initmethod = initmethod,
+                ncores = ncores,
+                seed = seed,
+                method = method,
+                m = m,
+                k = k,
+                Ps = Ps,
+                n = n
               ))
   class(out) <- 'permci'
   return(out)

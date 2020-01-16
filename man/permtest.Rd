@@ -41,3 +41,6 @@ printed to Console otherwise, suppress updates.}
 Carry out a randomization test for a treatment effect using a user defined
 test statistic.
 }
+\seealso{
+\code{\link[permuter]{permci}} for a randomization-based CI
+}
