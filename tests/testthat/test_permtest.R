@@ -27,9 +27,9 @@ test_that("permtest seed parameter works as it should", {
                        nperm = 10, ncores = 1, quietly = T)
   tmp4 <- permtest_glm(y ~ trt, trtname = 'trt', runit = 'clusid', data = ds,
                        nperm = 10, ncores = 1, seed = 124, quietly = T)
-  expect_true(identical(tmp1, tmp2))
-  expect_false(identical(tmp2, tmp3))
-  expect_false(identical(tmp2, tmp4))
+  expect_true(identical(tmp1$permCoefs, tmp2$permCoefs))
+  expect_false(identical(tmp2$permCoefs, tmp3$permCoefs))
+  expect_false(identical(tmp2$permCoefs, tmp4$permCoefs))
 
   # parallel
   ncores <- parallel::detectCores() - 1
@@ -41,23 +41,36 @@ test_that("permtest seed parameter works as it should", {
                        nperm = 10, ncores = ncores, quietly = T)
   tmp4 <- permtest_glm(y ~ trt, trtname = 'trt', runit = 'clusid', data = ds,
                        nperm = 10, ncores = ncores, seed = 124, quietly = T)
-  expect_true(identical(tmp1, tmp2))
-  expect_false(identical(tmp2, tmp3))
-  expect_false(identical(tmp2, tmp4))
+  expect_true(identical(tmp1$permCoefs, tmp2$permCoefs))
+  expect_false(identical(tmp2$permCoefs, tmp3$permCoefs))
+  expect_false(identical(tmp2$permCoefs, tmp4$permCoefs))
 
   # not parallel vs parallel
   tmp1 <- permtest_glm(y ~ trt, trtname = 'trt', runit = 'clusid', data = ds,
                        nperm = 10, ncores = 1, seed = 123, quietly = T)
   tmp2 <- permtest_glm(y ~ trt, trtname = 'trt', runit = 'clusid', data = ds,
                        nperm = 10, ncores = 2, seed = 123, quietly = T)
-  expect_true(identical(tmp1, tmp2))
+  expect_true(identical(tmp1$permCoefs, tmp2$permCoefs))
+})
+
+test_that("permtest with fitted model object works as it should", {
+  ds <- gendata_crt(nclus = c(5, 5), size = c(10, 10), theta = 0, sigma = 1,
+                    mu = 0, sd = 1)
+  # permtest_glm
+  tmp5 <- permtest_glm(y ~ trt, trtname = 'trt', runit = 'clusid', data = ds,
+                       nperm = 10, ncores = 1, seed = 444, quietly = T)
+  # permtest
+  m1 <- glm(y ~ trt, data = ds)
+  tmp6 <- permtest(m1, trtname = 'trt', runit = 'clusid', data = ds,
+                   nperm = 10, ncores = 1, seed = 444, quietly = T)
+  expect_true(identical(tmp5$permCoefs, tmp6$permCoefs))
 })
 
 test_that("permtest with user defined function works as it should", {
   ds <- gendata_crt(nclus = c(5, 5), size = c(10, 10), theta = 0, sigma = 1,
                     mu = 0, sd = 1)
   # permtest_glm
-  tmp5 <- permtest_glm(y ~ trt, trtname = 'trt', runit = 'clusid', data = ds,
+  tmp7 <- permtest_glm(y ~ trt, trtname = 'trt', runit = 'clusid', data = ds,
                        nperm = 10, ncores = 1, seed = 444, quietly = T)
   # permtest
   f_tmp <- function(d) {
@@ -65,9 +78,9 @@ test_that("permtest with user defined function works as it should", {
     coef_tmp <- coef(fit_tmp)['trt']
     return(as.numeric(coef_tmp))
   }
-  tmp6 <- permtest(f_tmp, trtname = 'trt', runit = 'clusid', data = ds,
+  tmp8 <- permtest(f_tmp, trtname = 'trt', runit = 'clusid', data = ds,
                    nperm = 10, ncores = 1, seed = 444, quietly = T)
-  expect_true(identical(tmp5, tmp6))
+  expect_true(identical(tmp7$permCoefs, tmp8$permCoefs))
 })
 
 # should add other permtest_xxx tests, but first need dummy data

@@ -5,9 +5,8 @@
 #' indicated by black lines, initial values an x, final update an o, estimated
 #' CI values by red horizontal lines.
 #'
-#' @param x An object of class "permci" returned from one of the permci functions
-#' (e.g. \code{\link[permuter]{permci_glm}}).
-#' @param ... optional arguments to \code{\link[graphics]{plot}}
+#' @param x An object of class "permci" returned from one of the permci
+#' functions (e.g. \code{\link[permuter]{permci_glm}}).
 #' @export
 plot.permci <- function(x) {
   xmax <- nrow(x$trace)
@@ -28,4 +27,22 @@ plot.permci <- function(x) {
     points(xmax, x$trace[xmax, 1], lwd = 2)
   mtext('Number of Permutations', 1, line = 2.5)
   par(mfrow = c(1, 1), mar = c(5, 4, 4, 2) + 0.1, oma = rep(0, 4)) # reset par
+}
+
+#' Plot randomization distribution
+#'
+#' This function takes a permtest object and produces a histogram of the Monte
+#' Carlo randomization distribution of the test statistic. The observed value is
+#' indicated by a red vertical line.
+#'
+#' @param x An object of class "permtest" returned from one of the permtest
+#' functions (e.g. \code{\link[permuter]{permtest_glm}}).
+#' @param ... optional arguments to \code{\link[graphics]{hist}}
+#' @export
+plot.permtest <- function(x, ...) {
+  hist(x$permCoefs, xlab = expression(hat(theta)^{(p)}),
+       main = 'Randomization Distribution', ...)
+  abline(v = x$coef, col = 'red', lwd = 2)
+  axis(3, at = x$coef, labels = expression(hat(theta)), col = 'red',
+       col.axis = 'red', lwd = 2, line = -1, tick = F)
 }

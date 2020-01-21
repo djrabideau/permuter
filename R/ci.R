@@ -20,18 +20,15 @@
 #'   \code{\link[survival]{survreg}}
 #'   \item \code{permci_coxph}: randomization CI based on
 #'   \code{\link[survival]{coxph}}
-#'   \item \code{permci_ic_sp}: randomization CI based on
-#'   \code{\link[icenReg]{ic_sp}}
 #' }
 #' To ensure correct specification of the parameters passed to the models above
-#' (e.g. \code{formula} in \code{\link[icenReg]{ic_sp}}), please refer to their
-#' documentation.
+#' (e.g. \code{formula} in \code{\link[survival]{survreg}}), please refer to
+#' their documentation.
 #'
 #' @seealso \code{\link[permuter]{permci}} for a more general CI function;
 #' \code{\link[permuter]{permci_glm}},
-#' \code{\link[permuter]{permci_survreg}}, \code{\link[permuter]{permci_coxph}},
-#' \code{\link[permuter]{permci_ic_sp}} for corresponding randomization-based
-#' CIs
+#' \code{\link[permuter]{permci_survreg}}, \code{\link[permuter]{permci_coxph}}
+#' for corresponding randomization-based CIs
 #'
 #' @inheritParams permtest_glm
 #' @param level two-sided confidence level (e.g. level = 0.95 for 95\% CI)
@@ -69,6 +66,32 @@
 #' values are taken as the final CI (if unspecified, defaults to recommended
 #' value in
 #' \href{https://doi.org/10.1198/jcgs.2009.0011}{Garthwaite and Jones (2009)})
+#'
+#' @examples
+#' # Calculate randomization-based CI for the incidence rate ratio (IRR) of
+#' # bacterial pneumonia episodes between the two intervention groups in
+#' # pneumovac data set. (Note, it will take a few seconds to run 1,000
+#' # permutations)
+#'
+#' head(pneumovac) # visualize data
+#' ci <- permci_glm(bpepisodes ~ spnvac, trtname = 'spnvac',
+#'                  runit = 'randunit', family = poisson, data = pneumovac,
+#'                  nperm = 1000, ncores = 2, seed = 445)
+#' print(ci$ci)
+#' #       lower       upper
+#' # -0.97314014  0.06265964
+#' plot(ci) # monitor convergence of CI search
+#'
+#' @references
+#' Garthwaite, P. H. (1996). Confidence intervals from randomization tests.
+#' Biometrics 52, 1387–1393.
+#'
+#' Garthwaite, P. H. and Jones, M. C. (2009). A Stochastic Approximation Method
+#' and Its Application to Confidence Intervals. Journal of Computational and
+#' Graphical Statistics 18, 184-200.
+#'
+#' Rabideau, D. J. and Wang, R. Randomization-Based Confidence Intervals for
+#' Cluster Randomized Trials. Under Review.
 #' @export
 permci_glm <- function(formula, trtname, runit, strat = NULL,
                        family = gaussian, data, nperm = 1000, nburn = 0,
@@ -264,208 +287,6 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
   return(out)
 }
 
-
-#' @rdname permci_glm
-#' @export
-permci_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
-                         nperm = 1000, nburn = 0,
-                         level = 0.95, init, initmethod = 'perm',
-                         ncores = 1, seed, quietly = F,
-                         method = 'G', m, k, Ps = NULL, n) {
-  if (ncores > 1) {
-    doParallel::registerDoParallel(cores = ncores)
-  } else {
-    foreach::registerDoSEQ()
-  }
-  if (!missing(seed)) set.seed(seed)
-
-  alpha <- 1 - level
-
-  # default values for (m, k, Ps, n) if not user-specified
-  if (missing(m)) {
-    m <- min(c(50, ceiling(0.3 * (4 - alpha) / alpha)))
-  } else {
-    if (m < 0)
-      stop("m must be non-negative")
-  }
-  if (missing(k)) {
-    z <- qnorm(1 - (alpha / 2))
-    k <- 2 * sqrt(2 * pi) * exp(z^2 / 2) / z
-  }
-  if (method == 'GJ') {
-    if (is.null(Ps)) {
-      v <- 15
-      P1 <- min(5000, nperm / 20)
-      P2 <- (v - 1) * P1
-      P3 <- nperm - P1 - P2
-      Ps <- c(P1, P2, P3)
-      if (sum((Ps < 1)) > 0)
-        stop("At least one default phase length is negative. Please specify 'Ps' or increase 'nperm'")
-    } else {
-      if (sum(Ps) != nperm)
-        stop("sum(Ps) must be equal to nperm")
-    }
-    P <- sum(Ps)
-    if (missing(n)) {
-      n <- P - 2 * Ps[1]
-    } else {
-      if (n < 1 | n > nperm)
-        stop("n must be an integer between 1 and nperm")
-    }
-  } else if (method == 'G') {
-    n <- 1 # not used
-  }
-
-  data[, paste0(trtname, ".obs")] <- data[, trtname] # obs trt for offset
-
-  # get lower/upper with weibull model for interval censored
-  m1 <- survival::survreg(formula = formula, data = data)
-  Vcov <- vcov(m1, useScale = FALSE)
-  obs1 <- as.numeric(coef(m1)[trtname])
-  trt.se <- sqrt(Vcov[trtname, trtname])
-  lower.sr <- obs1 - qnorm(1 - alpha / 2) * trt.se
-  upper.sr <- obs1 + qnorm(1 - alpha / 2) * trt.se
-  # re-parameterize from survival::survreg to ic_sp
-  lower <- - upper.sr / m1$scale
-  upper <- - lower.sr / m1$scale
-
-  # reset m1 and obs1 corresponding to ic_sp
-  m1 <- icenReg::ic_sp(formula = formula, data = data)
-  obs1 <- as.numeric(coef(m1)[trtname])
-
-  if (missing(init)) {
-    if (initmethod == 'asymp') {
-      # initialize at asymptotic lower/upper
-      data$low <- low <- lower
-      data$up <- up <- upper
-    } else if (initmethod == 'perm') {
-      # initialize using quick randomization test of H0: theta = obs1,
-      # as recommended in Garthwaite (1996)
-      nperm_init <- ceiling((4 - alpha) / alpha)
-      data$obs1 <- obs1
-      formula.tmp <- update(formula,
-                  as.formula(paste0("~ . + offset(", trtname, ".obs * obs1)")))
-      perm.stat <- foreach::foreach(i = 1:nperm_init, .combine = c) %dorng% {
-        data.tmp <- permute(data, trtname, runit, strat) # permuted data
-        model.tmp <- icenReg::ic_sp(formula = formula.tmp, data = data.tmp) # fit
-        as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
-      }
-      t1 <- sort(perm.stat)[2] # 2nd to smallest
-      t2 <- sort(perm.stat)[nperm_init - 1] # 2nd to largest
-      data$low <- low <- obs1 - ((t2 - t1) / 2)
-      data$up <- up <- obs1 + ((t2 - t1) / 2)
-    } else {
-      print(initmethod)
-      stop("'initmethod' not recognized")
-    }
-  } else {
-    # initialize at given initial values
-    data$low <- low <- init[1]
-    data$up <- up <- init[2]
-  }
-
-  inits <- c(low, up)
-
-  # if more than 1 core, run lower/upper in parallel
-  # search for lower
-  trace <- foreach::foreach(j = 1:2, .combine = cbind) %dorng% {
-    if (j == 1) {
-      low.vec <- rep(NA, nperm + nburn)
-      formula.tmp <- update(formula,
-                  as.formula(paste0("~ . + offset(", trtname, ".obs * low)")))
-      for (i in 1:(nperm + nburn)) {
-
-        # permute based on runit
-        data.tmp <- permute(data, trtname, runit, strat) # permuted data
-        model.tmp <- icenReg::ic_sp(formula = formula.tmp, data = data.tmp) # fit
-        t <- as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
-        tstar <- (obs1 - low) # tx effect estimate from original permutation
-
-        # update using Robbins-Monro step
-        ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
-        low <- update_rm(method, low, obs1, t, tstar, alpha, ii, m, k, Ps, bound = "lower")
-        data$low <- low
-        low.vec[i] <- low
-
-        if (ncores == 1 & !quietly & i %in% seq(ceiling((nperm + nburn) / 10), (nperm + nburn),
-                                              ceiling((nperm + nburn) / 10)))
-          cat(i, "of", (nperm + nburn), "permutations complete\n")
-      }
-      if (ncores == 1 & !quietly) cat("lower bound complete\n")
-      low.vec
-    }
-
-    if (j == 2) {
-
-      # search for upper
-      up.vec <- rep(NA, nperm + nburn)
-      formula.tmp <- update(formula,
-                    as.formula(paste0("~ . + offset(", trtname, ".obs * up)")))
-      for (i in 1:(nperm + nburn)) {
-
-        # permute based on runit
-        data.tmp <- permute(data, trtname, runit, strat) # permuted data
-        model.tmp <- icenReg::ic_sp(formula = formula.tmp, data = data.tmp) # fit
-        t <- as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
-        tstar <- (obs1 - up) # tx effect estimate from original permutation
-
-        # update using Robbins-Monro step
-        ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
-        up <- update_rm(method, up, obs1, t, tstar, alpha, ii, m, k, Ps, bound = "upper")
-        data$up <- up
-        up.vec[i] <- up
-
-        if (ncores == 1 & !quietly & i %in% seq(ceiling((nperm + nburn) / 10), (nperm + nburn),
-                                              ceiling((nperm + nburn) / 10)))
-          cat(i, "of", (nperm + nburn), "permutations complete\n")
-      }
-      if (ncores == 1 & !quietly) cat("upper bound complete\n")
-      up.vec
-    }
-
-    # return these values
-    if (j == 1) {
-      low.vec
-    } else {
-      up.vec
-    }
-  } # end foreach
-
-  if (missing(seed)) seed <- NA
-  dimnames(trace)[[2]] <- c("lower", "upper")
-  if (method == 'G' | n == 1) {
-    # choose last update
-    ci <- c(trace[nperm + nburn, 1], trace[nperm + nburn, 2])
-  } else if (method == 'GJ') {
-    # average last n updates
-    trace_n <- trace[(nperm + nburn - n + 1):(nperm + nburn), ]
-    ci <- apply(trace_n, 2, mean)
-  }
-  out <- list(ci = ci,
-              trace = trace,
-              init = inits,
-              call = call,
-              args = list(
-                trtname = trtname,
-                runit = runit,
-                strat = strat,
-                nperm = nperm,
-                nburn = nburn,
-                level = level,
-                initmethod = initmethod,
-                ncores = ncores,
-                seed = seed,
-                method = method,
-                m = m,
-                k = k,
-                Ps = Ps,
-                n = n
-              ))
-  class(out) <- 'permci'
-  return(out)
-}
-
-
 #' @rdname permci_glm
 #' @export
 permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
@@ -660,7 +481,6 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
   class(out) <- 'permci'
   return(out)
 }
-
 
 #' @rdname permci_glm
 #' @export
@@ -879,6 +699,23 @@ permci_coxph <- function(formula, trtname, runit, strat = NULL, data,
 #'
 #' @param model an appropriate fitted model object, see Details
 #' @inheritParams permci_glm
+#'
+#' @examples
+#' # Calculate randomization-based CI for the incidence rate ratio (IRR) of
+#' # bacterial pneumonia episodes between the two intervention groups in
+#' # pneumovac data set. (Note, it will take a few seconds to run 1,000
+#' # permutations)
+#'
+#' head(pneumovac) # visualize data
+#' m1 <- glm(bpepisodes ~ spnvac, family = poisson, data = pneumovac) # fit GLM
+#' ci <- permci(m1, trtname = 'spnvac',
+#'              runit = 'randunit', data = pneumovac,
+#'              nperm = 1000, ncores = 2, seed = 445)
+#' print(ci$ci)
+#' #       lower       upper
+#' # -0.97314014  0.06265964
+#' plot(ci) # monitor convergence of CI search
+#'
 #' @export
 permci <- function(model, trtname, runit, strat = NULL, data,
                    nperm = 1000, nburn = 0,

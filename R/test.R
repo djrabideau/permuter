@@ -13,17 +13,14 @@
 #'   \code{\link[survival]{survreg}}
 #'   \item \code{permtest_coxph}: randomization test based on
 #'   \code{\link[survival]{coxph}}
-#'   \item \code{permtest_ic_sp}: randomization test based on
-#'   \code{\link[icenReg]{ic_sp}}
 #' }
 #' To ensure correct specification of the parameters passed to the models above
-#' (e.g. \code{formula} in \code{\link[icenReg]{ic_sp}}), please refer to their
-#' documentation.
+#' (e.g. \code{formula} in \code{\link[survival]{survreg}}), please refer to
+#' their documentation.
 #'
 #' @seealso \code{\link[permuter]{permci_glm}},
-#' \code{\link[permuter]{permci_survreg}}, \code{\link[permuter]{permci_coxph}},
-#' \code{\link[permuter]{permci_ic_sp}} for corresponding randomization-based
-#' CIs
+#' \code{\link[permuter]{permci_survreg}}, \code{\link[permuter]{permci_coxph}}
+#' for corresponding randomization-based CIs
 #'
 #' @param formula an object of class "\code{\link[stats]{formula}}"
 #' (or one that can be coerced to that class): a symbolic description of the
@@ -55,16 +52,36 @@
 #' @importFrom foreach %dopar%
 #' @importFrom doRNG %dorng%
 #' @importFrom survival Surv
+#'
+#' @examples
+#' # Carry out a randomization test to determine whether there was a difference
+#' # in the rate of bacterial pneumonia episodes between the two intervention
+#' # groups in pneumovac data set. The test statistic we will use is the
+#' # estimated log incidence rate ratio (IRR) from a Poisson GLM. (Note, it will
+#' # take a few seconds to run 1,000 permutations)
+#'
+#' head(pneumovac) # visualize data
+#' test <- permtest_glm(bpepisodes ~ spnvac, trtname = 'spnvac',
+#'                      runit = 'randunit', family = poisson, data = pneumovac,
+#'                      nperm = 1000, ncores = 2, seed = 445)
+#' print(c(test$coef, test$pval))
+#' # [1] -0.4466939  0.0560000
+#' plot(test) # visualize Monte Carlo randomization distribution
 #' @export
 permtest_glm <- function(formula, trtname, runit, strat = NULL,
                          family = gaussian, data, nperm = 1000, ncores = 1,
                          seed, quietly = T) {
+  call <- match.call()
   if (ncores > 1) {
     doParallel::registerDoParallel(cores = ncores)
   } else {
     foreach::registerDoSEQ()
   }
-  if (!missing(seed)) set.seed(seed)
+  if (!missing(seed)) {
+    set.seed(seed)
+  } else {
+    seed <- NA
+  }
 
   # fit glm
   m1 <- glm(formula = formula, family = family, data = data)
@@ -85,96 +102,19 @@ permtest_glm <- function(formula, trtname, runit, strat = NULL,
 
   pval.perm <- mean(abs(comb.stat1) >= abs(obs1)) # prop more extreme than obs
 
-  out <- c(obs1, pval.perm)
-  names(out) <- c(trtname, "p.perm")
-  return(out)
-}
-
-#' @rdname permtest_glm
-#' @export
-permtest_glmer <- function(formula, trtname, runit, strat = NULL,
-                           family = gaussian, data, nperm = 1000, ncores = 1,
-                           seed, quietly = T) {
-  if (is.character(family))
-    family <- get(family, mode = "function", envir = parent.frame())
-  if (is.function(family))
-    family <- family()
-  if (is.null(family$family)) {
-    stop(paste0("family '", family, "' not recognized"))
-  }
-
-  if (ncores > 1) {
-    doParallel::registerDoParallel(cores = ncores)
-  } else {
-    foreach::registerDoSEQ()
-  }
-  if (!missing(seed)) set.seed(seed)
-
-  # fit GLMM
-  if (family$family == "gaussian") {
-    m1 <- lme4::lmer(formula = formula, data = data, REML = F)
-  } else {
-    m1 <- lme4::glmer(formula = formula, family = family, data = data)
-  }
-  obs1 <- as.numeric(fixef(m1)[trtname])
-
-  # permute based on runit
-  perm.stat <- foreach::foreach(i = 2:nperm, .combine = c) %dorng% {
-    data.tmp <- permute(data, trtname, runit, strat) # permuted data
-    if (family$family == "gaussian") {
-      model.tmp <- lme4::lmer(formula = formula, data = data.tmp)
-    } else {
-      model.tmp <- lme4::glmer(formula = formula, family = family, data = data.tmp) # fit
-    }
-    if (ncores == 1 & !quietly & i %in% seq(ceiling(nperm / 10), nperm,
-                                            ceiling(nperm / 10)))
-      cat(i, "of", nperm, "permutations complete\n")
-
-    as.numeric(fixef(model.tmp)[trtname]) # return tx effect estimate
-  }
-
-  comb.stat1 <- c(obs1, perm.stat)
-
-  pval.perm <- mean(abs(comb.stat1) >= abs(obs1)) # prop more extreme than obs
-
-  out <- c(obs1, pval.perm)
-  names(out) <- c(trtname, "p.perm")
-  return(out)
-}
-
-#' @rdname permtest_glm
-#' @export
-permtest_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
-                           nperm = 1000, ncores = 1, seed, quietly = T) {
-  if (ncores > 1) {
-    doParallel::registerDoParallel(cores = ncores)
-  } else {
-    foreach::registerDoSEQ()
-  }
-  if (!missing(seed)) set.seed(seed)
-
-  # fit ic_sp
-  m1 <- icenReg::ic_sp(formula = formula, data = data)
-  obs1 <- as.numeric(coef(m1)[trtname])
-
-  # permute based on runit
-  perm.stat <- foreach::foreach(i = 2:nperm, .combine = c) %dorng% {
-    data.tmp <- permute(data, trtname, runit, strat) # permuted data
-    model.tmp <- icenReg::ic_sp(formula = formula, data = data.tmp) # fit
-
-    if (ncores == 1 & !quietly & i %in% seq(ceiling(nperm / 10), nperm,
-                                            ceiling(nperm / 10)))
-      cat(i, "of", nperm, "permutations complete\n")
-
-    as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
-  }
-
-  comb.stat1 <- c(obs1, perm.stat)
-
-  pval.perm <- mean(abs(comb.stat1) >= abs(obs1)) # prop more extreme than obs
-
-  out <- c(obs1, pval.perm)
-  names(out) <- c(trtname, "p.perm")
+  out <- list(coef = obs1,
+              pval = pval.perm,
+              permCoefs = comb.stat1,
+              call = call,
+              args = list(
+                trtname = trtname,
+                runit = runit,
+                strat = strat,
+                nperm = nperm,
+                ncores = ncores,
+                seed = seed
+              ))
+  class(out) <- 'permtest'
   return(out)
 }
 
@@ -183,12 +123,17 @@ permtest_ic_sp <- function(formula, trtname, runit, strat = NULL, data,
 permtest_survreg <- function(formula, trtname, runit, strat = NULL, data,
                              dist = "weibull", nperm = 1000, ncores = 1,
                              seed, quietly = T) {
+  call <- match.call()
   if (ncores > 1) {
     doParallel::registerDoParallel(cores = ncores)
   } else {
     foreach::registerDoSEQ()
   }
-  if (!missing(seed)) set.seed(seed)
+  if (!missing(seed)) {
+    set.seed(seed)
+  } else {
+    seed <- NA
+  }
 
   # fit
   m1 <- survival::survreg(formula = formula, data = data, dist = dist)
@@ -211,8 +156,19 @@ permtest_survreg <- function(formula, trtname, runit, strat = NULL, data,
 
   pval.perm <- mean(abs(comb.stat1) >= abs(obs1)) # prop more extreme than obs
 
-  out <- c(obs1, pval.perm)
-  names(out) <- c(trtname, "p.perm")
+  out <- list(coef = obs1,
+              pval = pval.perm,
+              permCoefs = comb.stat1,
+              call = call,
+              args = list(
+                trtname = trtname,
+                runit = runit,
+                strat = strat,
+                nperm = nperm,
+                ncores = ncores,
+                seed = seed
+              ))
+  class(out) <- 'permtest'
   return(out)
 }
 
@@ -220,12 +176,17 @@ permtest_survreg <- function(formula, trtname, runit, strat = NULL, data,
 #' @export
 permtest_coxph <- function(formula, trtname, runit, strat = NULL, data,
                              nperm = 1000, ncores = 1, seed, quietly = T) {
+  call <- match.call()
   if (ncores > 1) {
     doParallel::registerDoParallel(cores = ncores)
   } else {
     foreach::registerDoSEQ()
   }
-  if (!missing(seed)) set.seed(seed)
+  if (!missing(seed)) {
+    set.seed(seed)
+  } else {
+    seed <- NA
+  }
 
   # fit
   m1 <- survival::coxph(formula = formula, data = data)
@@ -247,22 +208,35 @@ permtest_coxph <- function(formula, trtname, runit, strat = NULL, data,
 
   pval.perm <- mean(abs(comb.stat1) >= abs(obs1)) # prop more extreme than obs
 
-  out <- c(obs1, pval.perm)
-  names(out) <- c(trtname, "p.perm")
+  out <- list(coef = obs1,
+              pval = pval.perm,
+              permCoefs = comb.stat1,
+              call = call,
+              args = list(
+                trtname = trtname,
+                runit = runit,
+                strat = strat,
+                nperm = nperm,
+                ncores = ncores,
+                seed = seed
+              ))
+  class(out) <- 'permtest'
   return(out)
 }
 
 #' Randomization test
 #'
-#' Carry out a randomization test for a treatment effect using a user defined
-#' test statistic.
+#' Carry out a randomization test for a treatment effect using a fitted model
+#' object or user defined test statistic.
 #'
 #' @seealso \code{\link[permuter]{permci}} for a randomization-based CI
 #'
-#' @param f a function, which when applied to \code{data} returns the observed
-#' univariate test statistic. This function can be as simple or complex as
-#' desired as long as its one input argument is a data frame structured the same
-#' as \code{data}.
+#' @param f fitted model object or function. If \code{f} is a fitted model
+#' object, then the coefficient corresponding to \code{trtname} is used as the
+#' test statistic. If \code{f} is a function, it must be defined such that when
+#' applied to \code{data}, it returns the observed univariate test statistic.
+#' This function can be as simple or complex as desired as long as its one input
+#' argument is a data frame structured the same as \code{data}.
 #' @inheritParams permute
 #' @param data a data frame containing the variables necessary for the function
 #' \code{f}. This argument is passed to \code{f}.
@@ -277,15 +251,24 @@ permtest_coxph <- function(formula, trtname, runit, strat = NULL, data,
 #' @export
 permtest <- function(f, trtname, runit, strat = NULL, data,
                      nperm = 1000, ncores = 1, seed, quietly = T) {
+  call <- match.call()
   if (ncores > 1) {
     doParallel::registerDoParallel(cores = ncores)
   } else {
     foreach::registerDoSEQ()
   }
-  if (!missing(seed)) set.seed(seed)
+  if (!missing(seed)) {
+    set.seed(seed)
+  } else {
+    seed <- NA
+  }
 
   # calculate test statistic for obs data
-  obs1 <- f(data)
+  if (is.function(f)) {
+    obs1 <- f(data)
+  } else {
+    obs1 <- as.numeric(coef(f)[trtname])
+  }
 
   # permute based on runit
   perm.stat <- foreach::foreach(i = 2:nperm, .combine = c) %dorng% {
@@ -294,14 +277,30 @@ permtest <- function(f, trtname, runit, strat = NULL, data,
                                             ceiling(nperm / 10)))
       cat(i, "of", nperm, "permutations complete\n")
 
-    f(data.tmp) # return test statistic for perm data
+    if (is.function(f)) {
+      f(data.tmp) # return test statistic for perm data
+    } else {
+      model.tmp <- update(f, data = data.tmp) # fit
+      as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
+    }
   }
 
   comb.stat1 <- c(obs1, perm.stat)
 
   pval.perm <- mean(abs(comb.stat1) >= abs(obs1)) # prop more extreme than obs
 
-  out <- c(obs1, pval.perm)
-  names(out) <- c(trtname, "p.perm")
+  out <- list(coef = obs1,
+              pval = pval.perm,
+              permCoefs = comb.stat1,
+              call = call,
+              args = list(
+                trtname = trtname,
+                runit = runit,
+                strat = strat,
+                nperm = nperm,
+                ncores = ncores,
+                seed = seed
+              ))
+  class(out) <- 'permtest'
   return(out)
 }

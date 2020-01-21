@@ -95,6 +95,23 @@ coefficients can be extracted in the standard way (see \link[stats]{coef}).
 E.g. an object of class "glm" (see \link[stats]{glm}), "survreg" (see
 \link[survival]{survreg}), "coxph" (see \link[survival]{coxph}), etc.
 }
+\examples{
+# Calculate randomization-based CI for the incidence rate ratio (IRR) of
+# bacterial pneumonia episodes between the two intervention groups in
+# pneumovac data set. (Note, it will take a few seconds to run 1,000
+# permutations)
+
+head(pneumovac) # visualize data
+m1 <- glm(bpepisodes ~ spnvac, family = poisson, data = pneumovac) # fit GLM
+ci <- permci(m1, trtname = 'spnvac',
+             runit = 'randunit', data = pneumovac,
+             nperm = 1000, ncores = 2, seed = 445)
+print(ci$ci)
+#       lower       upper
+# -0.97314014  0.06265964
+plot(ci) # monitor convergence of CI search
+
+}
 \seealso{
 \code{\link[permuter]{permtest}} for a randomization test
 }

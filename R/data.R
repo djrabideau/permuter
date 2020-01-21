@@ -34,17 +34,17 @@
 #' The Botswana Combination Prevention Project (BCPP) was a pair-matched HIV
 #' prevention CRT to test whether a combination treatment and prevention
 #' intervention could reduce population-level cumulative HIV incidence over 3
-#' years of follow-up. A total of 30 communities were randomized: 15 to the
-#' intervention arm (combination treatment and prevention package) and 15 to
-#' the control arm (enhanced standard of care). The primary study endpoint was
-#' cumulative HIV incidence, measured at scheduled study visits as time to
-#' HIV-infection within a cohort of individuals identified as HIV-negative among
-#' a 20\% random sample of eligible households at baseline. That is, we have an
-#' interval-censored time-to-event outcome for each cohort participant. Since
-#' the primary trial data are confidential, this is a simulated data set,
-#' which was generated to mimic the BCPP by applying an agent-based epidemic
-#' model to a dynamic network of simulated sexual partnerships
-#' (Goyal, Blitzstein, and De Gruttola, 2013; Wang et al., 2014).
+#' years of follow-up (Makhema et al, 2019). A total of 30 communities were
+#' randomized: 15 to the intervention arm (combination treatment and prevention
+#' package) and 15 to the control arm (enhanced standard of care). The primary
+#' study endpoint was cumulative HIV incidence, measured at scheduled study
+#' visits as time to HIV-infection within a cohort of individuals identified as
+#' HIV-negative among a 20\% random sample of eligible households at baseline.
+#' That is, we have an interval-censored time-to-event outcome for each cohort
+#' participant. Since the primary trial data are confidential, this is a
+#' simulated data set, which was generated to mimic the BCPP by applying an
+#' agent-based epidemic model to a dynamic network of simulated sexual
+#' partnerships (Goyal, Blitzstein, and De Gruttola, 2013; Wang et al., 2014).
 #'
 #' @format A data frame with 10465 observations and 5 variables:
 #' \describe{
@@ -59,6 +59,10 @@
 #' Goyal, R., Blitzstein, J., and De Gruttola, V. (2013). Simulating Bipartite
 #' Networks to Reflect Uncertainty in Local Network Properties. Harvard
 #' University Biostatistics Working Paper Series.
+#'
+#' Makhema, J. et al. (2019). Universal Testing, Expanded Treatment, and
+#' Incidence of HIV Infection in Botswana. New England Journal of Medicine 381,
+#' 230-242.
 #'
 #' Wang, R., Goyal, R., Lei, Q., Essex, M., and De~Gruttola, V. (2014). Sample
 #' size considerations in the design of cluster randomized trials of combination

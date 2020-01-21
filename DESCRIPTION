@@ -6,8 +6,8 @@ Authors@R: person("Dustin", "Rabideau", email = "djrabideau@g.harvard.edu",
     role = c("aut", "cre"))
 Description: This package contains functions to carry out randomization tests 
     and corresponding confidence intervals (CI) for different types of 
-    individual-level outcome (e.g. continuous, binary, count) or randomization 
-    scheme (e.g. simple, restricted).
+    individual-level outcomes (e.g. continuous, binary, count) or design 
+    features (e.g. pair-matched, stratification).
 Depends: R (>= 3.4.1)
 License: MIT + file LICENSE
 Encoding: UTF-8
@@ -16,7 +16,6 @@ Imports:
     doParallel,
     doRNG,
     foreach,
-    icenReg,
     MASS,
     stats,
     survival

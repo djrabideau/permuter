@@ -8,10 +8,12 @@ permtest(f, trtname, runit, strat = NULL, data, nperm = 1000,
   ncores = 1, seed, quietly = T)
 }
 \arguments{
-\item{f}{a function, which when applied to \code{data} returns the observed
-univariate test statistic. This function can be as simple or complex as
-desired as long as its one input argument is a data frame structured the same
-as \code{data}.}
+\item{f}{fitted model object or function. If \code{f} is a fitted model
+object, then the coefficient corresponding to \code{trtname} is used as the
+test statistic. If \code{f} is a function, it must be defined such that when
+applied to \code{data}, it returns the observed univariate test statistic.
+This function can be as simple or complex as desired as long as its one input
+argument is a data frame structured the same as \code{data}.}
 
 \item{trtname}{character string specifying the name of randomized treatment
 variable in \code{data} (variable to permute)}
@@ -38,8 +40,8 @@ runs in parallel.}
 printed to Console otherwise, suppress updates.}
 }
 \description{
-Carry out a randomization test for a treatment effect using a user defined
-test statistic.
+Carry out a randomization test for a treatment effect using a fitted model
+object or user defined test statistic.
 }
 \seealso{
 \code{\link[permuter]{permci}} for a randomization-based CI

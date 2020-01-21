@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.17 (TeX Live 2016) (preloaded format=pdflatex 2016.5.22)  7 JAN 2020 13:45
+This is pdfTeX, Version 3.14159265-2.6-1.40.17 (TeX Live 2016) (preloaded format=pdflatex 2016.5.22)  21 JAN 2020 14:54
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -464,70 +464,91 @@ Package color Info: Redefining color shadecolor on input line 441.
 LaTeX Font Info:    Font shape `OT1/cmtt/bx/n' in size <12> not available
 (Font)              Font shape `OT1/cmtt/m/n' tried instead on input line 443.
 Package color Info: Redefining color shadecolor on input line 449.
+Package color Info: Redefining color shadecolor on input line 458.
  [1
 
 {/usr/local/texlive/2016/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
-Package color Info: Redefining color shadecolor on input line 463.
-Package color Info: Redefining color shadecolor on input line 483.
+Package color Info: Redefining color shadecolor on input line 474.
+Package color Info: Redefining color shadecolor on input line 494.
  [2]
-Package color Info: Redefining color shadecolor on input line 510.
-Package color Info: Redefining color shadecolor on input line 537.
+Package color Info: Redefining color shadecolor on input line 516.
 
-<figure/plot-1.pdf, id=49, 433.62pt x 289.08pt>
-File: figure/plot-1.pdf Graphic file (type pdf)
- <use figure/plot-1.pdf>
-Package pdftex.def Info: figure/plot-1.pdf used on input line 539.
+<figure/plot_test-1.pdf, id=54, 433.62pt x 289.08pt>
+File: figure/plot_test-1.pdf Graphic file (type pdf)
+
+<use figure/plot_test-1.pdf>
+Package pdftex.def Info: figure/plot_test-1.pdf used on input line 518.
+(pdftex.def)             Requested size: 433.61894pt x 289.09251pt.
+Package color Info: Redefining color shadecolor on input line 528.
+Package color Info: Redefining color shadecolor on input line 546.
+ [3 <./figure/plot_test-1.pdf>]
+Package color Info: Redefining color shadecolor on input line 571.
+
+<figure/plot_ci-1.pdf, id=68, 433.62pt x 289.08pt>
+File: figure/plot_ci-1.pdf Graphic file (type pdf)
+ <use figure/plot_ci-1.pdf>
+Package pdftex.def Info: figure/plot_ci-1.pdf used on input line 573.
 (pdftex.def)             Requested size: 433.61894pt x 289.09251pt.
 
-[3]
-Package color Info: Redefining color shadecolor on input line 557.
- [4 <./figure/plot-1.pdf>]
-Package color Info: Redefining color shadecolor on input line 574.
+[4 <./figure/plot_ci-1.pdf>]
+Package color Info: Redefining color shadecolor on input line 584.
+Package color Info: Redefining color shadecolor on input line 606.
  [5]
-Package color Info: Redefining color shadecolor on input line 609.
-Package color Info: Redefining color shadecolor on input line 636.
+Package color Info: Redefining color shadecolor on input line 623.
+Package color Info: Redefining color shadecolor on input line 657.
  [6]
-Package color Info: Redefining color shadecolor on input line 656.
+Package color Info: Redefining color shadecolor on input line 684.
+Package color Info: Redefining color shadecolor on input line 704.
 
-<figure/ci_plots-1.pdf, id=73, 433.62pt x 361.35pt>
+<figure/ci_plots-1.pdf, id=87, 433.62pt x 361.35pt>
 File: figure/ci_plots-1.pdf Graphic file (type pdf)
 
 <use figure/ci_plots-1.pdf>
-Package pdftex.def Info: figure/ci_plots-1.pdf used on input line 658.
+Package pdftex.def Info: figure/ci_plots-1.pdf used on input line 706.
 (pdftex.def)             Requested size: 433.61894pt x 361.36566pt.
-Package color Info: Redefining color shadecolor on input line 671.
+ [7]
+Package color Info: Redefining color shadecolor on input line 719.
 
-<figure/ci_plots2-1.pdf, id=74, 433.62pt x 361.35pt>
+<figure/ci_plots2-1.pdf, id=93, 433.62pt x 361.35pt>
 File: figure/ci_plots2-1.pdf Graphic file (type pdf)
 
 <use figure/ci_plots2-1.pdf>
-Package pdftex.def Info: figure/ci_plots2-1.pdf used on input line 673.
+Package pdftex.def Info: figure/ci_plots2-1.pdf used on input line 721.
 (pdftex.def)             Requested size: 433.61894pt x 361.36566pt.
- [7 <./figure/ci_plots-1.pdf>]
-Package color Info: Redefining color shadecolor on input line 686.
+ [8 <./figure/ci_plots-1.pdf>]
+Package color Info: Redefining color shadecolor on input line 734.
 
-<figure/ci_plots3-1.pdf, id=85, 433.62pt x 361.35pt>
+<figure/ci_plots3-1.pdf, id=103, 433.62pt x 361.35pt>
 File: figure/ci_plots3-1.pdf Graphic file (type pdf)
 
 <use figure/ci_plots3-1.pdf>
-Package pdftex.def Info: figure/ci_plots3-1.pdf used on input line 688.
+Package pdftex.def Info: figure/ci_plots3-1.pdf used on input line 736.
 (pdftex.def)             Requested size: 433.61894pt x 361.36566pt.
- [8 <./figure/ci_plots2-1.pdf>] [9 <./figure/ci_plots3-1.pdf>]
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 715.
- [10]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 715.
+ [9 <./figure/ci_plots2-1.pdf>]
+Package color Info: Redefining color shadecolor on input line 749.
+ [10 <./figure/ci_plots3-1.pdf>] <figure/pci3-1.pdf, id=123, 433.62pt x 289.08p
+t>
+File: figure/pci3-1.pdf Graphic file (type pdf)
+
+<use figure/pci3-1.pdf>
+Package pdftex.def Info: figure/pci3-1.pdf used on input line 772.
+(pdftex.def)             Requested size: 433.61894pt x 289.09251pt.
+ [11 <./figure/pci3-1.pdf>]
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 802.
+ [12]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 802.
  (./permuter.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 715.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 715.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 802.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 802.
 Package rerunfilecheck Info: File `permuter.out' has not changed.
-(rerunfilecheck)             Checksum: 8E22E35E0BA86A5630B12FD8EA5392D4;457.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 715.
+(rerunfilecheck)             Checksum: 1968107AE83B24C444B275BC838BE2C4;550.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 802.
  ) 
 Here is how much of TeX's memory you used:
- 8545 strings out of 493014
- 125108 string characters out of 6133351
- 229211 words of memory out of 5000000
- 11963 multiletter control sequences out of 15000+600000
+ 8561 strings out of 493014
+ 125394 string characters out of 6133351
+ 229355 words of memory out of 5000000
+ 11974 multiletter control sequences out of 15000+600000
  13394 words of font info for 52 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  36i,6n,43p,1078b,380s stack positions out of 5000i,500n,10000p,200000b,80000s
@@ -538,10 +559,10 @@ Here is how much of TeX's memory you used:
 usr/local/texlive/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmr17.pfb></us
 r/local/texlive/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmti12.pfb></usr
 /local/texlive/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt12.pfb>
-Output written on permuter.pdf (10 pages, 199489 bytes).
+Output written on permuter.pdf (12 pages, 223797 bytes).
 PDF statistics:
- 139 PDF objects out of 1000 (max. 8388607)
- 110 compressed objects within 2 object streams
- 18 named destinations out of 1000 (max. 500000)
- 77 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 170 PDF objects out of 1000 (max. 8388607)
+ 135 compressed objects within 2 object streams
+ 21 named destinations out of 1000 (max. 500000)
+ 95 words of extra memory for PDF output out of 10000 (max. 10000000)
 

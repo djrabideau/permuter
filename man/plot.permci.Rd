@@ -7,10 +7,8 @@
 \method{plot}{permci}(x)
 }
 \arguments{
-\item{x}{An object of class "permci" returned from one of the permci functions
-(e.g. \code{\link[permuter]{permci_glm}}).}
-
-\item{...}{optional arguments to \code{\link[graphics]{plot}}}
+\item{x}{An object of class "permci" returned from one of the permci
+functions (e.g. \code{\link[permuter]{permci_glm}}).}
 }
 \description{
 This function takes a permci object and produces plots to monitor convergence

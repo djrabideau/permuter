@@ -2,7 +2,6 @@
 % Please edit documentation in R/ci.R
 \name{permci_glm}
 \alias{permci_glm}
-\alias{permci_ic_sp}
 \alias{permci_survreg}
 \alias{permci_coxph}
 \title{Randomization-Based CI for regression}
@@ -11,10 +10,6 @@ permci_glm(formula, trtname, runit, strat = NULL, family = gaussian,
   data, nperm = 1000, nburn = 0, level = 0.95, init,
   initmethod = "perm", ncores = 1, seed, quietly = F, method = "G",
   m, k, Ps = NULL, n)
-
-permci_ic_sp(formula, trtname, runit, strat = NULL, data, nperm = 1000,
-  nburn = 0, level = 0.95, init, initmethod = "perm", ncores = 1,
-  seed, quietly = F, method = "G", m, k, Ps = NULL, n)
 
 permci_survreg(formula, trtname, runit, strat = NULL, data,
   dist = "weibull", nperm = 1000, nburn = 0, level = 0.95, init,
@@ -129,17 +124,41 @@ These functions corrrespond to particular regression models:
   \code{\link[survival]{survreg}}
   \item \code{permci_coxph}: randomization CI based on
   \code{\link[survival]{coxph}}
-  \item \code{permci_ic_sp}: randomization CI based on
-  \code{\link[icenReg]{ic_sp}}
 }
 To ensure correct specification of the parameters passed to the models above
-(e.g. \code{formula} in \code{\link[icenReg]{ic_sp}}), please refer to their
-documentation.
+(e.g. \code{formula} in \code{\link[survival]{survreg}}), please refer to
+their documentation.
+}
+\examples{
+# Calculate randomization-based CI for the incidence rate ratio (IRR) of
+# bacterial pneumonia episodes between the two intervention groups in
+# pneumovac data set. (Note, it will take a few seconds to run 1,000
+# permutations)
+
+head(pneumovac) # visualize data
+ci <- permci_glm(bpepisodes ~ spnvac, trtname = 'spnvac',
+                 runit = 'randunit', family = poisson, data = pneumovac,
+                 nperm = 1000, ncores = 2, seed = 445)
+print(ci$ci)
+#       lower       upper
+# -0.97314014  0.06265964
+plot(ci) # monitor convergence of CI search
+
+}
+\references{
+Garthwaite, P. H. (1996). Confidence intervals from randomization tests.
+Biometrics 52, 1387–1393.
+
+Garthwaite, P. H. and Jones, M. C. (2009). A Stochastic Approximation Method
+and Its Application to Confidence Intervals. Journal of Computational and
+Graphical Statistics 18, 184-200.
+
+Rabideau, D. J. and Wang, R. Randomization-Based Confidence Intervals for
+Cluster Randomized Trials. Under Review.
 }
 \seealso{
 \code{\link[permuter]{permci}} for a more general CI function;
 \code{\link[permuter]{permci_glm}},
-\code{\link[permuter]{permci_survreg}}, \code{\link[permuter]{permci_coxph}},
-\code{\link[permuter]{permci_ic_sp}} for corresponding randomization-based
-CIs
+\code{\link[permuter]{permci_survreg}}, \code{\link[permuter]{permci_coxph}}
+for corresponding randomization-based CIs
 }
