@@ -143,11 +143,9 @@ getInits <- function(model, trtname, runit, strat, data, initmethod, alpha, obs1
       # as recommended in Garthwaite (1996)
       nperm_init <- ceiling((4 - alpha) / alpha)
       data$obs1 <- obs1
-      formula.tmp <- update(model$formula,
-                  as.formula(paste0("~ . + offset(", trtname, ".obs * obs1)")))
       perm.stat <- foreach::foreach(i = 1:nperm_init, .combine = c) %dorng% {
         data.tmp <- permute(data, trtname, runit, strat) # permuted data
-        model.tmp <- update(model, formula. = formula.tmp, data = data.tmp) # fit
+        model.tmp <- update(model, formula. = as.formula(paste0("~ . + offset(", trtname, ".obs * obs1)")), data = data.tmp) # fit
         as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
       }
       t1 <- sort(perm.stat)[2] # 2nd to smallest

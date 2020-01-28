@@ -478,18 +478,21 @@ head(bcpp)
 Let's carry out randomization-based inference for these data, making sure we restrict the analysis based on the pair-matched design by including \texttt{strat = "pair.id"}. We'll use the estimated treatment effect from an interval-censored Weibull regression model as our test statistic.
 <<bcpp_analysis, cache = T, warning = F>>=
 library(survival)
-test <- permtest_survreg(Surv(left, right, type = 'interval2') ~ treat,
-                         trtname = 'treat', runit = 'group',
-                         strat = 'pair.id', data = bcpp, dist = 'weibull',
-                         nperm = 1000, ncores = 3, seed = 446)
-ci <- permci_survreg(Surv(left, right, type = 'interval2') ~ treat,
-                     trtname = 'treat', runit = 'group',
-                     strat = 'pair.id', data = bcpp, dist = 'weibull',
-                     nperm = 1000, ncores = 2, seed = 447)
+m1 <- survreg(Surv(left, right, type = 'interval2') ~ treat, data = bcpp)
+test <- permtest(m1, trtname = 'treat', runit = 'group',
+                 strat = 'pair.id', data = bcpp,
+                 nperm = 10, ncores = 3, seed = 446)
+ci <- permci(m1, trtname = 'treat', runit = 'group',
+             strat = 'pair.id', data = bcpp,
+             nperm = 10, ncores = 2, seed = 447)
 print(c(test$coef, test$pval))
 print(ci$ci)
+
+# Transform Weibull AFT to PH, i.e. estimated hazard ratio
+print(c(exp(-test$coef / m1$scale), test$pval))
+print(as.numeric(rev(exp(-ci$ci / m1$scale))))
 @
-\noindent These results suggest better outcomes (i.e. longer average times to HIV-infection) among those living in communities randomized to the intervention. Note, we didn't explicitly set \texttt{level = 0.95} or \texttt{initmethod = "perm"} this time, but these are the default values.
+\noindent These results suggest better outcomes (i.e. reduced hazard of HIV-infection) among those living in communities randomized to the intervention. Note, we didn't explicitly set \texttt{level = 0.95} or \texttt{initmethod = "perm"} this time, but these are the default values.
 
 Matching and stratification are just special forms of \textit{restricted} randomization, which is also handled by restricting the set of permutations in the analysis. We plan to implement this more general functionality in future versions of \textbf{permuter}.
 

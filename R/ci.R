@@ -793,13 +793,11 @@ permci <- function(model, trtname, runit, strat = NULL, data,
     if (j == 1) {
       # search for lower
       low.vec <- rep(NA, nperm + nburn)
-      formula.tmp <- update(model$formula,
-                  as.formula(paste0("~ . + offset(", trtname, ".obs * low)")))
       for (i in 1:(nperm + nburn)) {
 
         # permute based on runit
         data.tmp <- permute(data, trtname, runit, strat) # permuted data
-        model.tmp <- update(model, formula. = formula.tmp, data = data.tmp) # fit
+        model.tmp <- update(model, formula. = as.formula(paste0("~ . + offset(", trtname, ".obs * low)")), data = data.tmp) # fit
         t <- as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
         tstar <- (obs1 - low) # tx effect estimate from original permutation
 
@@ -820,13 +818,11 @@ permci <- function(model, trtname, runit, strat = NULL, data,
     if (j == 2) {
       # search for upper
       up.vec <- rep(NA, nperm + nburn)
-      formula.tmp <- update(model$formula,
-                    as.formula(paste0("~ . + offset(", trtname, ".obs * up)")))
       for (i in 1:(nperm + nburn)) {
 
         # permute based on runit
         data.tmp <- permute(data, trtname, runit, strat) # permuted data
-        model.tmp <- update(model, formula. = formula.tmp, data = data.tmp) # fit
+        model.tmp <- update(model, formula. = as.formula(paste0("~ . + offset(", trtname, ".obs * up)")), data = data.tmp) # fit
         t <- as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
         tstar <- (obs1 - up) # tx effect estimate from original permutation
 

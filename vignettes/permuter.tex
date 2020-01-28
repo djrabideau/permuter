@@ -608,13 +608,13 @@ The \texttt{bcpp} data frame contains an indicator for assigment to the interven
 \hlkwd{head}\hlstd{(bcpp)}
 \end{alltt}
 \begin{verbatim}
-##     group pair.id treat      left    right
-## 59      1       1     0 169.57143      Inf
-## 65      1       1     0 170.14286      Inf
-## 136     1       1     0 164.14286      Inf
-## 127     1       1     0 196.42857      Inf
-## 17      1       1     0  43.57143 95.71429
-## 199     1       1     0 198.57143      Inf
+##   group pair.id treat     left right
+## 1     1       1     0 154.9326   Inf
+## 2     1       1     0 155.4123   Inf
+## 3     1       1     0 156.9418   Inf
+## 4     1       1     0 152.7263   Inf
+## 5     1       1     0 155.7767   Inf
+## 6     1       1     0 159.4207   Inf
 \end{verbatim}
 \end{kframe}
 \end{knitrout}
@@ -623,29 +623,41 @@ Let's carry out randomization-based inference for these data, making sure we res
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
 \hlkwd{library}\hlstd{(survival)}
-\hlstd{test} \hlkwb{<-} \hlkwd{permtest_survreg}\hlstd{(}\hlkwd{Surv}\hlstd{(left, right,} \hlkwc{type} \hlstd{=} \hlstr{'interval2'}\hlstd{)} \hlopt{~} \hlstd{treat,}
-                         \hlkwc{trtname} \hlstd{=} \hlstr{'treat'}\hlstd{,} \hlkwc{runit} \hlstd{=} \hlstr{'group'}\hlstd{,}
-                         \hlkwc{strat} \hlstd{=} \hlstr{'pair.id'}\hlstd{,} \hlkwc{data} \hlstd{= bcpp,} \hlkwc{dist} \hlstd{=} \hlstr{'weibull'}\hlstd{,}
-                         \hlkwc{nperm} \hlstd{=} \hlnum{1000}\hlstd{,} \hlkwc{ncores} \hlstd{=} \hlnum{3}\hlstd{,} \hlkwc{seed} \hlstd{=} \hlnum{446}\hlstd{)}
-\hlstd{ci} \hlkwb{<-} \hlkwd{permci_survreg}\hlstd{(}\hlkwd{Surv}\hlstd{(left, right,} \hlkwc{type} \hlstd{=} \hlstr{'interval2'}\hlstd{)} \hlopt{~} \hlstd{treat,}
-                     \hlkwc{trtname} \hlstd{=} \hlstr{'treat'}\hlstd{,} \hlkwc{runit} \hlstd{=} \hlstr{'group'}\hlstd{,}
-                     \hlkwc{strat} \hlstd{=} \hlstr{'pair.id'}\hlstd{,} \hlkwc{data} \hlstd{= bcpp,} \hlkwc{dist} \hlstd{=} \hlstr{'weibull'}\hlstd{,}
-                     \hlkwc{nperm} \hlstd{=} \hlnum{1000}\hlstd{,} \hlkwc{ncores} \hlstd{=} \hlnum{2}\hlstd{,} \hlkwc{seed} \hlstd{=} \hlnum{447}\hlstd{)}
+\hlstd{m1} \hlkwb{<-} \hlkwd{survreg}\hlstd{(}\hlkwd{Surv}\hlstd{(left, right,} \hlkwc{type} \hlstd{=} \hlstr{'interval2'}\hlstd{)} \hlopt{~} \hlstd{treat,} \hlkwc{data} \hlstd{= bcpp)}
+\hlstd{test} \hlkwb{<-} \hlkwd{permtest}\hlstd{(m1,} \hlkwc{trtname} \hlstd{=} \hlstr{'treat'}\hlstd{,} \hlkwc{runit} \hlstd{=} \hlstr{'group'}\hlstd{,}
+                 \hlkwc{strat} \hlstd{=} \hlstr{'pair.id'}\hlstd{,} \hlkwc{data} \hlstd{= bcpp,}
+                 \hlkwc{nperm} \hlstd{=} \hlnum{10}\hlstd{,} \hlkwc{ncores} \hlstd{=} \hlnum{3}\hlstd{,} \hlkwc{seed} \hlstd{=} \hlnum{446}\hlstd{)}
+\hlstd{ci} \hlkwb{<-} \hlkwd{permci}\hlstd{(m1,} \hlkwc{trtname} \hlstd{=} \hlstr{'treat'}\hlstd{,} \hlkwc{runit} \hlstd{=} \hlstr{'group'}\hlstd{,}
+             \hlkwc{strat} \hlstd{=} \hlstr{'pair.id'}\hlstd{,} \hlkwc{data} \hlstd{= bcpp,}
+             \hlkwc{nperm} \hlstd{=} \hlnum{10}\hlstd{,} \hlkwc{ncores} \hlstd{=} \hlnum{2}\hlstd{,} \hlkwc{seed} \hlstd{=} \hlnum{447}\hlstd{)}
 \hlkwd{print}\hlstd{(}\hlkwd{c}\hlstd{(test}\hlopt{$}\hlstd{coef, test}\hlopt{$}\hlstd{pval))}
 \end{alltt}
 \begin{verbatim}
-## [1] 0.5047558 0.0010000
+## [1] 0.5030926 0.1000000
 \end{verbatim}
 \begin{alltt}
 \hlkwd{print}\hlstd{(ci}\hlopt{$}\hlstd{ci)}
 \end{alltt}
 \begin{verbatim}
 ##     lower     upper 
-## 0.3216444 0.7073001
+## 0.2249209 0.7848803
+\end{verbatim}
+\begin{alltt}
+\hlcom{# Transform Weibull AFT to PH, i.e. estimated hazard ratio}
+\hlkwd{print}\hlstd{(}\hlkwd{c}\hlstd{(}\hlkwd{exp}\hlstd{(}\hlopt{-}\hlstd{test}\hlopt{$}\hlstd{coef} \hlopt{/} \hlstd{m1}\hlopt{$}\hlstd{scale), test}\hlopt{$}\hlstd{pval))}
+\end{alltt}
+\begin{verbatim}
+## [1] 0.5875714 0.1000000
+\end{verbatim}
+\begin{alltt}
+\hlkwd{print}\hlstd{(}\hlkwd{as.numeric}\hlstd{(}\hlkwd{rev}\hlstd{(}\hlkwd{exp}\hlstd{(}\hlopt{-}\hlstd{ci}\hlopt{$}\hlstd{ci} \hlopt{/} \hlstd{m1}\hlopt{$}\hlstd{scale))))}
+\end{alltt}
+\begin{verbatim}
+## [1] 0.4362234 0.7884105
 \end{verbatim}
 \end{kframe}
 \end{knitrout}
-\noindent These results suggest better outcomes (i.e. longer average times to HIV-infection) among those living in communities randomized to the intervention. Note, we didn't explicitly set \texttt{level = 0.95} or \texttt{initmethod = "perm"} this time, but these are the default values.
+\noindent These results suggest better outcomes (i.e. reduced hazard of HIV-infection) among those living in communities randomized to the intervention. Note, we didn't explicitly set \texttt{level = 0.95} or \texttt{initmethod = "perm"} this time, but these are the default values.
 
 Matching and stratification are just special forms of \textit{restricted} randomization, which is also handled by restricting the set of permutations in the analysis. We plan to implement this more general functionality in future versions of \textbf{permuter}.
 
