@@ -62,7 +62,6 @@ permute <- function(data, trtname, runit, trtunit = NULL, strat = NULL) {
   }
 
   data <- merge(data[, -which(names(data) == trtname)], pdesign, by = trtunit)
-  data <- data[order(data, trtunit), ]
   return(data) # return data frame with permuted trtname
 }
 
