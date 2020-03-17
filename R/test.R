@@ -68,7 +68,7 @@
 #' # [1] -0.4466939  0.0560000
 #' plot(test) # visualize Monte Carlo randomization distribution
 #' @export
-permtest_glm <- function(formula, trtname, runit, strat = NULL,
+permtest_glm <- function(formula, trtname, runit, trtunit = NULL, strat = NULL,
                          family = gaussian, data, nperm = 1000, ncores = 1,
                          seed, quietly = T) {
   call <- match.call()
@@ -89,7 +89,7 @@ permtest_glm <- function(formula, trtname, runit, strat = NULL,
 
   # permute based on runit
   perm.stat <- foreach::foreach(i = 2:nperm, .combine = c) %dorng% {
-    data.tmp <- permute(data, trtname, runit, strat) # permuted data
+    data.tmp <- permute(data, trtname, runit, trtunit, strat) # permuted data
     model.tmp <- glm(formula = formula, family = family, data = data.tmp) # fit
     if (ncores == 1 & !quietly & i %in% seq(ceiling(nperm / 10), nperm,
                                             ceiling(nperm / 10)))
@@ -120,7 +120,7 @@ permtest_glm <- function(formula, trtname, runit, strat = NULL,
 
 #' @rdname permtest_glm
 #' @export
-permtest_survreg <- function(formula, trtname, runit, strat = NULL, data,
+permtest_survreg <- function(formula, trtname, runit, trtunit = NULL, strat = NULL, data,
                              dist = "weibull", nperm = 1000, ncores = 1,
                              seed, quietly = T) {
   call <- match.call()
@@ -141,7 +141,7 @@ permtest_survreg <- function(formula, trtname, runit, strat = NULL, data,
 
   # permute based on runit
   perm.stat <- foreach::foreach(i = 2:nperm, .combine = c) %dorng% {
-    data.tmp <- permute(data, trtname, runit, strat) # permuted data
+    data.tmp <- permute(data, trtname, runit, trtunit, strat) # permuted data
     model.tmp <- survival::survreg(formula = formula, data = data.tmp,
                                    dist = dist) # fit
 
@@ -174,7 +174,7 @@ permtest_survreg <- function(formula, trtname, runit, strat = NULL, data,
 
 #' @rdname permtest_glm
 #' @export
-permtest_coxph <- function(formula, trtname, runit, strat = NULL, data,
+permtest_coxph <- function(formula, trtname, runit, trtunit = NULL, strat = NULL, data,
                              nperm = 1000, ncores = 1, seed, quietly = T) {
   call <- match.call()
   if (ncores > 1) {
@@ -194,7 +194,7 @@ permtest_coxph <- function(formula, trtname, runit, strat = NULL, data,
 
   # permute based on runit
   perm.stat <- foreach::foreach(i = 2:nperm, .combine = c) %dorng% {
-    data.tmp <- permute(data, trtname, runit, strat) # permuted data
+    data.tmp <- permute(data, trtname, runit, trtunit, strat) # permuted data
     model.tmp <- survival::coxph(formula = formula, data = data.tmp) # fit
 
     if (ncores == 1 & !quietly & i %in% seq(ceiling(nperm / 10), nperm,
@@ -249,7 +249,7 @@ permtest_coxph <- function(formula, trtname, runit, strat = NULL, data,
 #' @param quietly logical; if TRUE (and if ncores == 1), status updates will be
 #' printed to Console otherwise, suppress updates.
 #' @export
-permtest <- function(f, trtname, runit, strat = NULL, data,
+permtest <- function(f, trtname, runit, trtunit = NULL, strat = NULL, data,
                      nperm = 1000, ncores = 1, seed, quietly = T) {
   call <- match.call()
   if (ncores > 1) {
@@ -272,7 +272,7 @@ permtest <- function(f, trtname, runit, strat = NULL, data,
 
   # permute based on runit
   perm.stat <- foreach::foreach(i = 2:nperm, .combine = c) %dorng% {
-    data.tmp <- permute(data, trtname, runit, strat) # permuted data
+    data.tmp <- permute(data, trtname, runit, trtunit, strat) # permuted data
     if (ncores == 1 & !quietly & i %in% seq(ceiling(nperm / 10), nperm,
                                             ceiling(nperm / 10)))
       cat(i, "of", nperm, "permutations complete\n")

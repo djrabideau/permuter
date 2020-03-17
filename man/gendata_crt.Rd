@@ -2,7 +2,7 @@
 % Please edit documentation in R/data-generation.R
 \name{gendata_crt}
 \alias{gendata_crt}
-\title{Generate data from GLMM}
+\title{Generate data from a parallel cluster randomized trial (CRT)}
 \usage{
 gendata_crt(family = gaussian, nclus, size, theta = 0, sigma, Sigma,
   mu, rho = 0, sd = 1, redist = "normal")
@@ -38,7 +38,7 @@ non-zero, then there is corrrelation between clusters.}
 'normal' and 'lognormal')}
 }
 \description{
-\code{gendata_crt} generates a dataset from a generalized linear mixed model
+\code{gendata_crt} generates a dataset from a parallel CRT based on a GLMM
 }
 \details{
 This function generates data from a generalized linear mixed model, a GLMM,

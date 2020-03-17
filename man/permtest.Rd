@@ -4,8 +4,8 @@
 \alias{permtest}
 \title{Randomization test}
 \usage{
-permtest(f, trtname, runit, strat = NULL, data, nperm = 1000,
-  ncores = 1, seed, quietly = T)
+permtest(f, trtname, runit, trtunit = NULL, strat = NULL, data,
+  nperm = 1000, ncores = 1, seed, quietly = T)
 }
 \arguments{
 \item{f}{fitted model object or function. If \code{f} is a fitted model
@@ -16,10 +16,15 @@ This function can be as simple or complex as desired as long as its one input
 argument is a data frame structured the same as \code{data}.}
 
 \item{trtname}{character string specifying the name of randomized treatment
-variable in \code{data} (variable to permute)}
+variable in \code{data} (i.e. specifies the variable to permute)}
 
 \item{runit}{character string specifying the name of unit of randomization
-in \code{data}}
+in \code{data} (i.e. specifies the level at which trtname will be permuted)}
+
+\item{trtunit}{character string specifying the name of the unit that
+corresponds to a unique scalar treatment assignment value (i.e. specifies how
+trtname will be permuted at runit level, see Details below). If trtunit =
+NULL (default), trtunit is assumed equivalent to runit.}
 
 \item{strat}{an optional character string specifying the name of the variable
 in \code{data} upon which randomization was stratified}

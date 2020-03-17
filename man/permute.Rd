@@ -4,16 +4,21 @@
 \alias{permute}
 \title{Permute randomized treatment assignments}
 \usage{
-permute(data, trtname, runit, strat = NULL)
+permute(data, trtname, runit, trtunit = NULL, strat = NULL)
 }
 \arguments{
 \item{data}{a data frame}
 
 \item{trtname}{character string specifying the name of randomized treatment
-variable in \code{data} (variable to permute)}
+variable in \code{data} (i.e. specifies the variable to permute)}
 
 \item{runit}{character string specifying the name of unit of randomization
-in \code{data}}
+in \code{data} (i.e. specifies the level at which trtname will be permuted)}
+
+\item{trtunit}{character string specifying the name of the unit that
+corresponds to a unique scalar treatment assignment value (i.e. specifies how
+trtname will be permuted at runit level, see Details below). If trtunit =
+NULL (default), trtunit is assumed equivalent to runit.}
 
 \item{strat}{an optional character string specifying the name of the variable
 in \code{data} upon which randomization was stratified}
@@ -26,4 +31,17 @@ This function inputs a data frame and outputs the same data frame with the
 \code{trtname} column permuted according to the randomization scheme
 provided. This is a general utility function used within test and confidence
 interval functions.
+
+For example, in a parallel cluster randomized trial (CRT), the unit of
+randomization is the cluster. Cluster is also the unit corresponding to each
+unique scalar treatment assigment value (i.e. every observation within a
+cluster is assigned the same treatment). In this case, \code{runit =
+trtunit = 'cluster'}.
+
+In a stepped wedge CRT, the unit of randomization is also the cluster, but
+each cluster is randomized to crossover from control to treatment at a
+particular time period (i.e. each cluster is randomized to a sequence of
+treatment assigments). In this case, \code{runit = 'cluster'} and
+\code{trtunit = c('cluster', 'period')}. This will tell \code{permute()} to
+permute the entire treatment sequence at a cluster level.
 }

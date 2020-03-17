@@ -6,14 +6,16 @@
 \alias{permtest_coxph}
 \title{Randomization test for regression}
 \usage{
-permtest_glm(formula, trtname, runit, strat = NULL, family = gaussian,
+permtest_glm(formula, trtname, runit, trtunit = NULL, strat = NULL,
+  family = gaussian, data, nperm = 1000, ncores = 1, seed,
+  quietly = T)
+
+permtest_survreg(formula, trtname, runit, trtunit = NULL, strat = NULL,
+  data, dist = "weibull", nperm = 1000, ncores = 1, seed,
+  quietly = T)
+
+permtest_coxph(formula, trtname, runit, trtunit = NULL, strat = NULL,
   data, nperm = 1000, ncores = 1, seed, quietly = T)
-
-permtest_survreg(formula, trtname, runit, strat = NULL, data,
-  dist = "weibull", nperm = 1000, ncores = 1, seed, quietly = T)
-
-permtest_coxph(formula, trtname, runit, strat = NULL, data,
-  nperm = 1000, ncores = 1, seed, quietly = T)
 }
 \arguments{
 \item{formula}{an object of class "\code{\link[stats]{formula}}"
@@ -22,10 +24,15 @@ model to be fitted. This argument is passed to the corresponding regression
 function, e.g. \code{\link[stats]{glm}} (see Details).}
 
 \item{trtname}{character string specifying the name of randomized treatment
-variable in \code{data} (variable to permute)}
+variable in \code{data} (i.e. specifies the variable to permute)}
 
 \item{runit}{character string specifying the name of unit of randomization
-in \code{data}}
+in \code{data} (i.e. specifies the level at which trtname will be permuted)}
+
+\item{trtunit}{character string specifying the name of the unit that
+corresponds to a unique scalar treatment assignment value (i.e. specifies how
+trtname will be permuted at runit level, see Details below). If trtunit =
+NULL (default), trtunit is assumed equivalent to runit.}
 
 \item{strat}{an optional character string specifying the name of the variable
 in \code{data} upon which randomization was stratified}

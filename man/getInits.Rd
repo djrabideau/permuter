@@ -4,7 +4,8 @@
 \alias{getInits}
 \title{Get initial values for CI search}
 \usage{
-getInits(model, trtname, runit, strat, data, initmethod, alpha, obs1)
+getInits(model, trtname, runit, trtunit, strat, data, initmethod, alpha,
+  obs1)
 }
 \description{
 \code{getinits} returns initial values for CI search, \code{c(lower, upper)}

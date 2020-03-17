@@ -93,7 +93,7 @@
 #' Rabideau, D. J. and Wang, R. Randomization-Based Confidence Intervals for
 #' Cluster Randomized Trials. Under Review.
 #' @export
-permci_glm <- function(formula, trtname, runit, strat = NULL,
+permci_glm <- function(formula, trtname, runit, trtunit = NULL, strat = NULL,
                        family = gaussian, data, nperm = 1000, nburn = 0,
                        level = 0.95, init, initmethod = 'perm',
                        ncores = 1, seed, quietly = F,
@@ -166,7 +166,7 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
       formula.tmp <- update(formula,
                   as.formula(paste0("~ . + offset(", trtname, ".obs * obs1)")))
       perm.stat <- foreach::foreach(i = 1:nperm_init, .combine = c) %dorng% {
-        data.tmp <- permute(data, trtname, runit, strat) # permuted data
+        data.tmp <- permute(data, trtname, runit, trtunit, strat) # permuted data
         model.tmp <- glm(formula = formula.tmp, family = family,
                          data = data.tmp) # fit
         as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
@@ -197,7 +197,7 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
       for (i in 1:(nperm + nburn)) {
 
         # permute based on runit
-        data.tmp <- permute(data, trtname, runit, strat) # permuted data
+        data.tmp <- permute(data, trtname, runit, trtunit, strat) # permuted data
         model.tmp <- glm(formula = formula.tmp, family = family,
                          data = data.tmp) # fit
         t <- as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
@@ -225,7 +225,7 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
       for (i in 1:(nperm + nburn)) {
 
         # permute based on runit
-        data.tmp <- permute(data, trtname, runit, strat) # permuted data
+        data.tmp <- permute(data, trtname, runit, trtunit, strat) # permuted data
         model.tmp <- glm(formula = formula.tmp, family = family,
                          data = data.tmp) # fit
         t <- as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
@@ -289,7 +289,7 @@ permci_glm <- function(formula, trtname, runit, strat = NULL,
 
 #' @rdname permci_glm
 #' @export
-permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
+permci_survreg <- function(formula, trtname, runit, trtunit = NULL, strat = NULL, data,
                            dist = "weibull", nperm = 1000, nburn = 0,
                            level = 0.95, init, initmethod = 'perm',
                            ncores = 1, seed, quietly = F,
@@ -361,7 +361,7 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
       formula.tmp <- update(formula,
                   as.formula(paste0("~ . + offset(", trtname, ".obs * obs1)")))
       perm.stat <- foreach::foreach(i = 1:nperm_init, .combine = c) %dorng% {
-        data.tmp <- permute(data, trtname, runit, strat) # permuted data
+        data.tmp <- permute(data, trtname, runit, trtunit, strat) # permuted data
         model.tmp <- survival::survreg(formula = formula.tmp, data = data.tmp, dist = dist) # fit
         as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
       }
@@ -391,7 +391,7 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
       for (i in 1:(nperm + nburn)) {
 
         # permute based on runit
-        data.tmp <- permute(data, trtname, runit, strat) # permuted data
+        data.tmp <- permute(data, trtname, runit, trtunit, strat) # permuted data
         model.tmp <- survival::survreg(formula = formula.tmp, data = data.tmp,
                              dist = dist) # fit
         t <- as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
@@ -420,7 +420,7 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
       for (i in 1:(nperm + nburn)) {
 
         # permute based on runit
-        data.tmp <- permute(data, trtname, runit, strat) # permuted data
+        data.tmp <- permute(data, trtname, runit, trtunit, strat) # permuted data
         model.tmp <- survival::survreg(formula = formula.tmp, data = data.tmp,
                              dist = dist) # fit
         t <- as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
@@ -484,7 +484,7 @@ permci_survreg <- function(formula, trtname, runit, strat = NULL, data,
 
 #' @rdname permci_glm
 #' @export
-permci_coxph <- function(formula, trtname, runit, strat = NULL, data,
+permci_coxph <- function(formula, trtname, runit, trtunit = NULL, strat = NULL, data,
                            nperm = 1000, nburn = 0,
                            level = 0.95, init, initmethod = 'perm',
                            ncores = 1, seed, quietly = F,
@@ -556,7 +556,7 @@ permci_coxph <- function(formula, trtname, runit, strat = NULL, data,
       formula.tmp <- update(formula,
                             as.formula(paste0("~ . + offset(", trtname, ".obs * obs1)")))
       perm.stat <- foreach::foreach(i = 1:nperm_init, .combine = c) %dorng% {
-        data.tmp <- permute(data, trtname, runit, strat) # permuted data
+        data.tmp <- permute(data, trtname, runit, trtunit, strat) # permuted data
         model.tmp <- survival::coxph(formula = formula.tmp, data = data.tmp) # fit
         as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
       }
@@ -586,7 +586,7 @@ permci_coxph <- function(formula, trtname, runit, strat = NULL, data,
       for (i in 1:(nperm + nburn)) {
 
         # permute based on runit
-        data.tmp <- permute(data, trtname, runit, strat) # permuted data
+        data.tmp <- permute(data, trtname, runit, trtunit, strat) # permuted data
         model.tmp <- survival::coxph(formula = formula.tmp, data = data.tmp) # fit
         t <- as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
         tstar <- (obs1 - low) # tx effect estimate from original permutation
@@ -614,7 +614,7 @@ permci_coxph <- function(formula, trtname, runit, strat = NULL, data,
       for (i in 1:(nperm + nburn)) {
 
         # permute based on runit
-        data.tmp <- permute(data, trtname, runit, strat) # permuted data
+        data.tmp <- permute(data, trtname, runit, trtunit, strat) # permuted data
         model.tmp <- survival::coxph(formula = formula.tmp, data = data.tmp) # fit
         t <- as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
         tstar <- (obs1 - up) # tx effect estimate from original permutation
@@ -717,7 +717,7 @@ permci_coxph <- function(formula, trtname, runit, strat = NULL, data,
 #' plot(ci) # monitor convergence of CI search
 #'
 #' @export
-permci <- function(model, trtname, runit, strat = NULL, data,
+permci <- function(model, trtname, runit, trtunit = NULL, strat = NULL, data,
                    nperm = 1000, nburn = 0,
                    level = 0.95, init, initmethod = 'perm',
                    ncores = 1, seed, quietly = F,
@@ -775,7 +775,7 @@ permci <- function(model, trtname, runit, strat = NULL, data,
 
   # initial values for CI search
   if (missing(init)) {
-    inits <- getInits(model, trtname, runit, strat, data, initmethod, alpha, obs1)
+    inits <- getInits(model, trtname, runit, trtunit, strat, data, initmethod, alpha, obs1)
   } else {
     if (!is.null(call$initmethod))
       warning(paste0("user-supplied init overrides initmethod = '", initmethod, "'"))
@@ -796,7 +796,7 @@ permci <- function(model, trtname, runit, strat = NULL, data,
       for (i in 1:(nperm + nburn)) {
 
         # permute based on runit
-        data.tmp <- permute(data, trtname, runit, strat) # permuted data
+        data.tmp <- permute(data, trtname, runit, trtunit, strat) # permuted data
         model.tmp <- update(model, formula. = as.formula(paste0("~ . + offset(", trtname, ".obs * low)")), data = data.tmp) # fit
         t <- as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
         tstar <- (obs1 - low) # tx effect estimate from original permutation
@@ -821,7 +821,7 @@ permci <- function(model, trtname, runit, strat = NULL, data,
       for (i in 1:(nperm + nburn)) {
 
         # permute based on runit
-        data.tmp <- permute(data, trtname, runit, strat) # permuted data
+        data.tmp <- permute(data, trtname, runit, trtunit, strat) # permuted data
         model.tmp <- update(model, formula. = as.formula(paste0("~ . + offset(", trtname, ".obs * up)")), data = data.tmp) # fit
         t <- as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
         tstar <- (obs1 - up) # tx effect estimate from original permutation

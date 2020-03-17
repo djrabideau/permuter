@@ -7,31 +7,62 @@
 #' provided. This is a general utility function used within test and confidence
 #' interval functions.
 #'
+#' For example, in a parallel cluster randomized trial (CRT), the unit of
+#' randomization is the cluster. Cluster is also the unit corresponding to each
+#' unique scalar treatment assigment value (i.e. every observation within a
+#' cluster is assigned the same treatment). In this case, \code{runit =
+#' trtunit = 'cluster'}.
+#'
+#' In a stepped wedge CRT, the unit of randomization is also the cluster, but
+#' each cluster is randomized to crossover from control to treatment at a
+#' particular time period (i.e. each cluster is randomized to a sequence of
+#' treatment assigments). In this case, \code{runit = 'cluster'} and
+#' \code{trtunit = c('cluster', 'period')}. This will tell \code{permute()} to
+#' permute the entire treatment sequence at a cluster level.
+#'
 #' @param data a data frame
 #' @param trtname character string specifying the name of randomized treatment
-#' variable in \code{data} (variable to permute)
+#' variable in \code{data} (i.e. specifies the variable to permute)
 #' @param runit character string specifying the name of unit of randomization
-#' in \code{data}
+#' in \code{data} (i.e. specifies the level at which trtname will be permuted)
+#' @param trtunit character string specifying the name of the unit that
+#' corresponds to a unique scalar treatment assignment value (i.e. specifies how
+#' trtname will be permuted at runit level, see Details below). If trtunit =
+#' NULL (default), trtunit is assumed equivalent to runit.
 #' @param strat an optional character string specifying the name of the variable
 #' in \code{data} upon which randomization was stratified
-permute <- function(data, trtname, runit, strat = NULL) {
+#' @export
+permute <- function(data, trtname, runit, trtunit = NULL, strat = NULL) {
+  if (is.null(trtunit))
+    trtunit <- runit
+  if (!(runit %in% trtunit))
+    stop('runit must be a subset of trtunit')
   if (is.null(strat)) {
     # permute
-    design <- unique(data[, c(runit, trtname)])
+    design <- unique(data[, c(trtunit, trtname)])
+    if (nrow(as.matrix(unique(data[, c(trtunit)]))) != nrow(design))
+      stop('each unique trtunit must correspond to only one value of trtname')
     pdesign <- design
-    pdesign[, trtname] <- sample(design[, trtname])
+    ldesign <- split(pdesign, pdesign[, runit])
+    shuffled_trt_list <- sample(lapply(ldesign, function(x) x[, trtname]))
+    pdesign[, trtname] <- unlist(shuffled_trt_list)
   } else {
     # stratified permute
-    design <- unique(data[, c(runit, strat, trtname)])
+    design <- unique(data[, c(trtunit, strat, trtname)])
+    if (nrow(as.matrix(unique(data[, c(trtunit)]))) != nrow(design))
+      stop('each unique trtunit must correspond to only one value of trtname')
     pdesign <- design
     for (s in unique(design[, strat])) {
-      ptrt <- sample(design[design[, strat] == s, trtname])
-      pdesign[design[, strat] == s, trtname] <- ptrt
+      pdesign_tmp <- pdesign[pdesign[, strat] == s, ]
+      ldesign_tmp <- split(pdesign_tmp, pdesign_tmp[, runit])
+      shuffled_trt_list_tmp <- sample(lapply(ldesign_tmp, function(x) x[, trtname]))
+      pdesign[pdesign[, strat] == s, trtname] <- unlist(shuffled_trt_list_tmp)
     }
     pdesign <- pdesign[, - which(names(pdesign) == strat)]
   }
 
-  data <- merge(data[, -which(names(data) == trtname)], pdesign, by = runit)
+  data <- merge(data[, -which(names(data) == trtname)], pdesign, by = trtunit)
+  data <- data[order(data, trtunit), ]
   return(data) # return data frame with permuted trtname
 }
 
@@ -123,7 +154,7 @@ update_rm <- function(method, init, thetahat, t, tstar, alpha, i, m, k, Ps,
 #'
 #' This is a general utility function used within \code{permci}.
 #'
-getInits <- function(model, trtname, runit, strat, data, initmethod, alpha, obs1) {
+getInits <- function(model, trtname, runit, trtunit, strat, data, initmethod, alpha, obs1) {
   if (initmethod == 'asymp') {
     if (sum(c('glm', 'survreg', 'coxph') %in% class(model)) > 0) {
       Vcov <- vcov(model, useScale = FALSE)
@@ -144,7 +175,7 @@ getInits <- function(model, trtname, runit, strat, data, initmethod, alpha, obs1
       nperm_init <- ceiling((4 - alpha) / alpha)
       data$obs1 <- obs1
       perm.stat <- foreach::foreach(i = 1:nperm_init, .combine = c) %dorng% {
-        data.tmp <- permute(data, trtname, runit, strat) # permuted data
+        data.tmp <- permute(data, trtname, runit, trtunit, strat) # permuted data
         model.tmp <- update(model, formula. = as.formula(paste0("~ . + offset(", trtname, ".obs * obs1)")), data = data.tmp) # fit
         as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
       }
