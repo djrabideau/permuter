@@ -881,3 +881,206 @@ permci <- function(model, trtname, runit, trtunit = NULL, strat = NULL, data,
   class(out) <- 'permci'
   return(out)
 }
+
+
+#' Randomization-Based CI with continuous outcomes
+#'
+#' Calculate a randomization-based confidence interval (CI) for a parameter
+#' based on continuous outcomes
+#'
+#' This function is used to calculate randomization-based confidence
+#' intervals (CI) for a parameter based on continuous outcomes. These CIs
+#' correspond to inverting randomization tests by using the typical approach for
+#' continuous outcomes by subtracting a fixed value from all individual-level
+#' outcomes in one group. To invert the randomization test, these functions adapt
+#' a computationally efficient CI algorithm based on the Robbins-Monro search
+#' process. Two methods can be used and correspond to
+#' \href{http://doi.org/10.2307/2532852}{Garthwaite (1996)} and
+#' \href{https://doi.org/10.1198/jcgs.2009.0011}{Garthwaite and Jones (2009)}.
+#' This function assumes trtname takes values 0 and 1, with 1 corresponding to
+#' the intervention/treatment group.
+#'
+#' @seealso \code{\link[permuter]{permtest}} for a randomization test
+#'
+#' @param f a function that must be defined such that when
+#' applied to \code{data}, it returns the observed univariate test statistic.
+#' This function can be as simple or complex as desired as long as its one input
+#' argument is a data frame structured the same as \code{data}.
+#' @param outcomename character string specifying the name of continuous
+#' outcome variable in \code{data} (i.e. specifies the variable to transform
+#' for CI)
+#' @inheritParams permci_glm
+#' @export
+permci_cont <- function(f, outcomename, trtname, runit, trtunit = NULL, strat = NULL, data,
+                   nperm = 1000, nburn = 0,
+                   level = 0.95, init,
+                   ncores = 1, seed, quietly = F,
+                   method = 'G', m, k, Ps = NULL, n) {
+  call <- match.call()
+  if (ncores > 1) {
+    doParallel::registerDoParallel(cores = ncores)
+  } else {
+    foreach::registerDoSEQ()
+  }
+  if (!missing(seed)) set.seed(seed)
+
+  if (level <= 0 | level >= 1)
+    stop(paste0("level = ", level, " outside of (0, 1)"))
+  alpha <- 1 - level
+
+  # default values for (m, k, Ps, n) if not user-specified
+  if (missing(m)) {
+    m <- min(c(50, ceiling(0.3 * (4 - alpha) / alpha)))
+  } else {
+    if (m < 0)
+      stop("m must be non-negative")
+  }
+  if (missing(k)) {
+    z <- qnorm(1 - (alpha / 2))
+    k <- 2 * sqrt(2 * pi) * exp(z^2 / 2) / z
+  }
+  if (method == 'GJ') {
+    if (is.null(Ps)) {
+      v <- 15
+      P1 <- min(5000, nperm / 20)
+      P2 <- (v - 1) * P1
+      P3 <- nperm - P1 - P2
+      Ps <- c(P1, P2, P3)
+      if (sum((Ps < 1)) > 0)
+        stop("At least one default phase length is negative. Please specify 'Ps' or increase 'nperm'")
+    } else {
+      if (sum(Ps) != nperm)
+        stop("sum(Ps) must be equal to nperm")
+    }
+    P <- sum(Ps)
+    if (missing(n)) {
+      n <- P - 2 * Ps[1]
+    } else {
+      if (n < 1 | n > nperm)
+        stop("n must be an integer between 1 and nperm")
+    }
+  } else if (method == 'G') {
+    n <- 1 # not used
+  }
+
+  data[, paste0(trtname, ".obs")] <- data[, trtname] # obs trt for offset
+
+  obs1 <- f(data) # observed treatment effect estimate
+
+  # initial values for CI search
+  if (missing(init)) {
+    inits <- getInits_cont(f, trtname, runit, trtunit, strat, data, alpha, obs1)
+  } else {
+    if (!is.null(call$initmethod))
+      warning(paste0("user-supplied init overrides initmethod = '", initmethod, "'"))
+    if (init[1] > obs1 | init[2] < obs1)
+      stop(paste0(round(obs1, 5), " is outside of init = c(",
+                  paste(init, collapse = ', '), ")"))
+    inits <- init
+  }
+  data$low <- low <- inits[1]
+  data$up <- up <- inits[2]
+
+  # invert test for CI using typical approach for continuous outcomes
+  trace <- foreach::foreach(j = 1:2, .combine = cbind) %dorng% {
+    if (j == 1) {
+      # search for lower
+      low.vec <- rep(NA, nperm + nburn)
+      for (i in 1:(nperm + nburn)) {
+
+        # directly transform outcomes in one group
+        data.trans <- data
+          trt_value <- 1 # this could be generalized somehow
+          trt_index <- data.trans[, trtname] == trt_value
+          data.trans[trt_index, outcomename] <- data.trans[trt_index, outcomename] - low
+
+        # permute based on runit
+        data.tmp <- permute(data.trans, trtname, runit, trtunit, strat) # permuted data
+        t <- f(data.tmp) # return tx effect estimate
+        tstar <- f(data.trans) # tx effect estimate from original permutation
+
+        # update using Robbins-Monro step
+        ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
+        low <- update_rm(method, low, obs1, t, tstar, alpha, ii, m, k, Ps, bound = "lower")
+        data$low <- low
+        low.vec[i] <- low
+
+        if (ncores == 1 & !quietly & i %in% seq(ceiling((nperm + nburn) / 10), (nperm + nburn),
+                                                ceiling((nperm + nburn) / 10)))
+          cat(i, "of", (nperm + nburn), "permutations complete\n")
+      }
+      if (ncores == 1 & !quietly) cat("lower bound complete\n")
+      low.vec
+    }
+
+    if (j == 2) {
+      # search for upper
+      up.vec <- rep(NA, nperm + nburn)
+      for (i in 1:(nperm + nburn)) {
+
+        # directly transform outcomes in one group
+        data.trans <- data
+          trt_value <- 1 # this could be generalized somehow
+          trt_index <- data.trans[, trtname] == trt_value
+          data.trans[trt_index, outcomename] <- data.trans[trt_index, outcomename] - up
+
+        # permute based on runit
+        data.tmp <- permute(data.trans, trtname, runit, trtunit, strat) # permuted data
+        t <- f(data.tmp) # return tx effect estimate
+        tstar <- f(data.trans) # tx effect estimate from original permutation
+
+        # update using Robbins-Monro step
+        ii <- i - as.numeric(i > nburn) * nburn # reset i <- 1 after nburn perms
+        up <- update_rm(method, up, obs1, t, tstar, alpha, ii, m, k, Ps, bound = "upper")
+        data$up <- up
+        up.vec[i] <- up
+
+        if (ncores == 1 & !quietly & i %in% seq(ceiling((nperm + nburn) / 10), (nperm + nburn),
+                                                ceiling((nperm + nburn) / 10)))
+          cat(i, "of", (nperm + nburn), "permutations complete\n")
+      }
+      if (ncores == 1 & !quietly) cat("upper bound complete\n")
+      up.vec
+    }
+
+    # return these values
+    if (j == 1) {
+      low.vec
+    } else {
+      up.vec
+    }
+  } # end foreach
+
+  if (missing(seed)) seed <- NA
+  dimnames(trace)[[2]] <- c("lower", "upper")
+  if (method == 'G' | n == 1) {
+    # choose last update
+    ci <- c(trace[nperm + nburn, 1], trace[nperm + nburn, 2])
+  } else if (method == 'GJ') {
+    # average last n updates
+    trace_n <- trace[(nperm + nburn - n + 1):(nperm + nburn), ]
+    ci <- apply(trace_n, 2, mean)
+  }
+  out <- list(ci = ci,
+              trace = trace,
+              init = inits,
+              call = call,
+              args = list(
+                trtname = trtname,
+                outcomename = outcomename,
+                runit = runit,
+                strat = strat,
+                nperm = nperm,
+                nburn = nburn,
+                level = level,
+                ncores = ncores,
+                seed = seed,
+                method = method,
+                m = m,
+                k = k,
+                Ps = Ps,
+                n = n
+              ))
+  class(out) <- 'permci'
+  return(out)
+}

@@ -193,3 +193,29 @@ getInits <- function(model, trtname, runit, trtunit, strat, data, initmethod, al
       stop("'initmethod' not recognized")
   }
 }
+
+#' Get initial values for CI search (continuous outcome)
+#'
+#' \code{getinits} returns initial values for CI search, \code{c(lower, upper)}
+#'
+#' Initial bounds are based on the permutation approach used in Garthwaite (1996) with
+#' \eqn{\hat{\theta}\pm \{(t_2 - t_1)/2\}}, where \eqn{t_1} and \eqn{t_2} denote
+#' the second smallest and second largest estimates from the permutation test.
+#'
+#' This is a general utility function used within \code{permci_cont}.
+#'
+getInits_cont <- function(f, trtname, runit, trtunit, strat, data, alpha, obs1) {
+    # initialize using quick randomization test of H0: theta = obs1,
+    # as recommended in Garthwaite (1996)
+    nperm_init <- ceiling((4 - alpha) / alpha)
+    data$obs1 <- obs1
+    perm.stat <- foreach::foreach(i = 1:nperm_init, .combine = c) %dorng% {
+      data.tmp <- permute(data, trtname, runit, trtunit, strat) # permuted data
+      f(data.tmp)
+    }
+    t1 <- sort(perm.stat)[2] # 2nd to smallest
+    t2 <- sort(perm.stat)[nperm_init - 1] # 2nd to largest
+    lower <- obs1 - ((t2 - t1) / 2)
+    upper <- obs1 + ((t2 - t1) / 2)
+    return(c(lower, upper))
+}
