@@ -273,3 +273,116 @@ gendata_swcrt <- function(family = gaussian, nclus, size, nstep, theta = 0, sigm
   out <- data.frame(cluster, period, individual, cluster.period.individual, cluster.period, trt, y)
   return(out)
 }
+
+#' @export
+gendata_swcrtStrat <- function(family = gaussian, nclus, size, nstep, theta = 0, sigma, Sigma, mu,
+                               beta, nu = 0, rho = 0, sd = 1, redist = 'normal',
+                               gamma = 0) {
+  # check inputs
+  if (nclus %% nstep != 0)
+    stop('nclus must be a multiple of nstep')
+  if (length(beta) != nstep + 1)
+    stop('length(beta) must be equal to nstep + 1')
+  if (nclus == nstep)
+    stop('nclus must be a multiple (>=2) for stratified SW-CRT')
+
+  # setup size matrix
+  if (class(size) == 'numeric') {
+    if (length(size) > 2) {
+      stop('length(size) != 2')
+    } else if (length(size) == 1) {
+      size <- c(size, size)
+    }
+    size <- matrix(rep(size, nclus), nrow = nclus, byrow = T)
+  } else if (class(size) == 'matrix') {
+    if (sum(dim(size) - c(nclus, 2) != c(0, 0)) > 1)
+      stop('nrow(size) != nclus')
+  }
+
+  nperiod <- (nstep + 1)
+
+  nis <- list()
+  for (k in 1:nclus) {
+    nis[[k]] <- round(runif(nperiod, size[k, 1], size[k, 2]))
+  }
+
+  ntotk <- unlist(lapply(nis, sum))
+  ntot <- sum(ntotk)
+
+  mymu <- rep(mu, ntot)
+
+  # random cluster effects
+  if (redist == 'normal') {
+    # covariance matrix for random cluster effects
+    if (missing(Sigma)) {
+      Sigma <- diag(rep(sigma^2, nclus))
+      Sigma[lower.tri(Sigma)] <- Sigma[upper.tri(Sigma)] <- sigma^2 * rho
+    } else {
+      if (!identical(as.numeric(dim(Sigma)), c(nclus, nclus)))
+        stop(paste0("dim(Sigma) should be c(", nclus, ', ', nclus, ')'))
+    }
+    # random cluster effects
+    alpha <- MASS::mvrnorm(1, rep(0, nclus), Sigma)
+  } else if (redist == 'lognormal') {
+    alpha <- rlnorm(nclus, 0, sigma)
+  } else {
+    stop(paste0('redist = ', redist, ' not supported'))
+  }
+  myalpha <- rep(alpha, ntotk)
+
+  # fixed period effects
+  mybeta <- unlist(lapply(nis, function(x) rep(beta, x)))
+
+  # random cluster-period effect
+  eta <- rnorm(nclus * nperiod, 0, nu)
+  myeta <- rep(eta, unlist(nis))
+
+  # create an individual id formatted as cluster#.period#.individual#
+  cluster <- rep(1:nclus, ntotk)
+  period <- unlist(lapply(nis, function(x) rep(1:nperiod, x)))
+  individual <- unlist(lapply(unlist(nis), function(x) 1:x))
+  cluster.period.individual <- paste(cluster, period, individual, sep='.')
+  cluster.period <- paste(cluster, period, sep='.')
+
+  # generate sw treatment matrix
+  trt.mat <- matrix(1, nrow = nstep, ncol = nperiod)
+  trt.mat[lower.tri(trt.mat, diag = T)] <- 0
+
+  # generate entire vector of treatment assignments
+  nperstep <- nclus / nstep
+  if (nperstep - round(nperstep) > 0) stop('nclus not a multiple of nstep')
+  trt <- c()
+  for (row in 1:nrow(trt.mat)) {
+    for (r in 1:nperstep) {
+      tmp <- rep(trt.mat[row, ], nis[[(row - 1) * nperstep + r]])
+      trt <- c(trt, tmp)
+    }
+  }
+
+  # generate stratification variable (binary for now)
+  strat <- rep(rep(0:1, nclus / 2), ntotk)
+
+  # generate outcome
+  if (is.character(family))
+    family <- get(family, mode = "function", envir = parent.frame())
+  if (is.function(family))
+    family <- family()
+  if (is.null(family$family)) {
+    print(family)
+    stop("'family' not recognized")
+  }
+  y.mean <- family$linkinv(mymu + myalpha + mybeta + myeta + trt * theta + strat * gamma)
+  if (family$family=='gaussian') {
+    y <- rnorm(ntot, y.mean, sd)
+  } else if (family$family=='binomial') {
+    y <- rbinom(ntot, 1, y.mean)
+  } else if (family$family=='poisson') {
+    y <- rpois(ntot, y.mean)
+  } else {
+    print(family)
+    stop("'family' not yet supported by this function")
+  }
+
+  out <- data.frame(cluster, period, individual, cluster.period.individual, cluster.period, trt, strat, y)
+  return(out)
+}

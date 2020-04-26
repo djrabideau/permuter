@@ -94,6 +94,8 @@ a computationally efficient CI algorithm based on the Robbins-Monro search
 process. Two methods can be used and correspond to
 \href{http://doi.org/10.2307/2532852}{Garthwaite (1996)} and
 \href{https://doi.org/10.1198/jcgs.2009.0011}{Garthwaite and Jones (2009)}.
+This function assumes trtname takes values 0 and 1, with 1 corresponding to
+the intervention/treatment group.
 }
 \seealso{
 \code{\link[permuter]{permtest}} for a randomization test
