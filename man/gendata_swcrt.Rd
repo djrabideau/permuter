@@ -4,8 +4,9 @@
 \alias{gendata_swcrt}
 \title{Generate data from a stepped wedge cluster randomized trial (SW-CRT)}
 \usage{
-gendata_swcrt(family = gaussian, nclus, size, nstep, theta = 0, sigma,
-  Sigma, mu, beta, nu = 0, rho = 0, sd = 1, redist = "normal")
+gendata_swcrt(family = gaussian, nclus, size, sizeFixed = F, nstep,
+  theta = 0, sigma, Sigma, mu, beta, nu = 0, rho = 0, sd = 1,
+  redist = "normal")
 }
 \arguments{
 \item{family}{a description of the error distribution and link function to
@@ -19,9 +20,14 @@ Currently \code{gendata_swcrt} supports gaussian, binomial, and poisson.}
 \item{size}{if numeric, number of individuals per cluster-period; if vector
 (must be length 2), specifies the range of cluster-period sizes, each of
 which will be drawn independently from a uniform distribution; if matrix
-(must be dim = c(nclus, 2)), the kth row specifies the range of
+and ncol(size) == 2, the kth row specifies the range of
 cluster-period sizes for the kth cluster, similarly drawn from a uniform
-distribution.}
+distribution; if matrix and ncol(size) == (nstep + 1) and sizeFixed == T,
+elements represent fixed cluster-period sizes.}
+
+\item{sizeFixed}{if T, size matrix represents fixed cluster-period sizes
+(i.e. not drawn uniformly based on range of sizes, just fixed at provided
+sizes).}
 
 \item{nstep}{number of randomization periods not including baseline, i.e.
 (nstep + 1) = number of periods.}

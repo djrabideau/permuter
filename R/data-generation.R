@@ -132,9 +132,13 @@ gendata_crt <- function(family = gaussian, nclus, size, theta = 0,
 #' @param size if numeric, number of individuals per cluster-period; if vector
 #'     (must be length 2), specifies the range of cluster-period sizes, each of
 #'     which will be drawn independently from a uniform distribution; if matrix
-#'     (must be dim = c(nclus, 2)), the kth row specifies the range of
+#'     and ncol(size) == 2, the kth row specifies the range of
 #'     cluster-period sizes for the kth cluster, similarly drawn from a uniform
-#'     distribution.
+#'     distribution; if matrix and ncol(size) == (nstep + 1) and sizeFixed == T,
+#'     elements represent fixed cluster-period sizes.
+#' @param sizeFixed if T, size matrix represents fixed cluster-period sizes
+#'     (i.e. not drawn uniformly based on range of sizes, just fixed at provided
+#'     sizes).
 #' @param nstep number of randomization periods not including baseline, i.e.
 #'     (nstep + 1) = number of periods.
 #' @param theta treatment effect
@@ -168,7 +172,7 @@ gendata_crt <- function(family = gaussian, nclus, size, theta = 0,
 #' # 5       1      1          5                     1.1.5            1.1   0 -0.5208075
 #' # 6       1      1          6                     1.1.6            1.1   0 -1.7543536
 #' @export
-gendata_swcrt <- function(family = gaussian, nclus, size, nstep, theta = 0, sigma, Sigma, mu,
+gendata_swcrt <- function(family = gaussian, nclus, size, sizeFixed = F, nstep, theta = 0, sigma, Sigma, mu,
                      beta, nu = 0, rho = 0, sd = 1, redist = 'normal') {
   # check inputs
   if (nclus %% nstep != 0)
@@ -185,15 +189,21 @@ gendata_swcrt <- function(family = gaussian, nclus, size, nstep, theta = 0, sigm
     }
     size <- matrix(rep(size, nclus), nrow = nclus, byrow = T)
   } else if (class(size) == 'matrix') {
-    if (sum(dim(size) - c(nclus, 2) != c(0, 0)) > 1)
+    if ((sum(dim(size) - c(nclus, 2) != c(0, 0)) > 1) & sizeFixed == F)
       stop('nrow(size) != nclus')
+    if ((sum(dim(size) - c(nclus, nstep + 1) != c(0, 0)) > 1) & sizeFixed == T)
+      stop('nrow(size) != nclus or ncol(size) != (nstep + 1)')
   }
 
   nperiod <- (nstep + 1)
 
-  nis <- list()
-  for (k in 1:nclus) {
-    nis[[k]] <- round(runif(nperiod, size[k, 1], size[k, 2]))
+  if (sizeFixed) {
+    nis <- split(size, rep(1:nrow(size), each = ncol(size)))
+  } else {
+    nis <- list()
+    for (k in 1:nclus) {
+      nis[[k]] <- round(runif(nperiod, size[k, 1], size[k, 2]))
+    }
   }
 
   ntotk <- unlist(lapply(nis, sum))
