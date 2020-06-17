@@ -4,7 +4,8 @@
 \alias{permute}
 \title{Permute randomized treatment assignments}
 \usage{
-permute(data, trtname, runit, trtunit = NULL, strat = NULL)
+permute(data, trtname, runit, trtunit = NULL, strat = NULL,
+  restrictedDf = NULL, restrictedDfType = NULL)
 }
 \arguments{
 \item{data}{a data frame}
@@ -22,6 +23,16 @@ NULL (default), trtunit is assumed equivalent to runit.}
 
 \item{strat}{an optional character string specifying the name of the variable
 in \code{data} upon which randomization was stratified}
+
+\item{restrictedDf}{an optional matrix of restricted randomizations from
+which to choose for randomization test/CI. Rows correspond to randomization
+units (e.g. individuals, clusters), first column contains randomization unit
+labels corresponding with data, other columns correspond to different possible
+randomization patterns. Entries depend on "restrictedDfType", see below.}
+
+\item{restrictedDfType}{type of restricted randomization matrix provided.
+If "parallel", entries indicate control (0) or intervention (1). If "SWT",
+entries indicate period at which clusters crossover.}
 }
 \description{
 \code{permute} returns data with treatment assigments permuted

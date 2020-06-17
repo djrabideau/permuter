@@ -6,7 +6,8 @@
 \usage{
 permci(model, trtname, runit, trtunit = NULL, strat = NULL, data,
   nperm = 1000, nburn = 0, level = 0.95, init, initmethod = "perm",
-  ncores = 1, seed, quietly = F, method = "G", m, k, Ps = NULL, n)
+  ncores = 1, seed, quietly = F, method = "G", m, k, Ps = NULL, n,
+  restrictedDf = NULL, restrictedDfType = NULL)
 }
 \arguments{
 \item{model}{an appropriate fitted model object, see Details}

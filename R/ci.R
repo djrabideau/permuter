@@ -721,7 +721,8 @@ permci <- function(model, trtname, runit, trtunit = NULL, strat = NULL, data,
                    nperm = 1000, nburn = 0,
                    level = 0.95, init, initmethod = 'perm',
                    ncores = 1, seed, quietly = F,
-                   method = 'G', m, k, Ps = NULL, n) {
+                   method = 'G', m, k, Ps = NULL, n,
+                   restrictedDf = NULL, restrictedDfType = NULL) {
   call <- match.call()
   if (ncores > 1) {
     doParallel::registerDoParallel(cores = ncores)
@@ -775,7 +776,8 @@ permci <- function(model, trtname, runit, trtunit = NULL, strat = NULL, data,
 
   # initial values for CI search
   if (missing(init)) {
-    inits <- getInits(model, trtname, runit, trtunit, strat, data, initmethod, alpha, obs1)
+    inits <- getInits(model, trtname, runit, trtunit, strat, data, initmethod, alpha, obs1,
+                      restrictedDf, restrictedDfType)
   } else {
     if (!is.null(call$initmethod))
       warning(paste0("user-supplied init overrides initmethod = '", initmethod, "'"))
@@ -796,7 +798,8 @@ permci <- function(model, trtname, runit, trtunit = NULL, strat = NULL, data,
       for (i in 1:(nperm + nburn)) {
 
         # permute based on runit
-        data.tmp <- permute(data, trtname, runit, trtunit, strat) # permuted data
+        data.tmp <- permute(data, trtname, runit, trtunit, strat,
+                            restrictedDf, restrictedDfType) # permuted data
         model.tmp <- update(model, formula. = as.formula(paste0("~ . + offset(", trtname, ".obs * low)")), data = data.tmp) # fit
         t <- as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
         tstar <- (obs1 - low) # tx effect estimate from original permutation
@@ -821,7 +824,8 @@ permci <- function(model, trtname, runit, trtunit = NULL, strat = NULL, data,
       for (i in 1:(nperm + nburn)) {
 
         # permute based on runit
-        data.tmp <- permute(data, trtname, runit, trtunit, strat) # permuted data
+        data.tmp <- permute(data, trtname, runit, trtunit, strat,
+                            restrictedDf, restrictedDfType) # permuted data
         model.tmp <- update(model, formula. = as.formula(paste0("~ . + offset(", trtname, ".obs * up)")), data = data.tmp) # fit
         t <- as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
         tstar <- (obs1 - up) # tx effect estimate from original permutation
@@ -915,7 +919,8 @@ permci_cont <- function(f, outcomename, trtname, runit, trtunit = NULL, strat = 
                    nperm = 1000, nburn = 0,
                    level = 0.95, init,
                    ncores = 1, seed, quietly = F,
-                   method = 'G', m, k, Ps = NULL, n) {
+                   method = 'G', m, k, Ps = NULL, n,
+                   restrictedDf = NULL, restrictedDfType = NULL) {
   call <- match.call()
   if (ncores > 1) {
     doParallel::registerDoParallel(cores = ncores)
@@ -969,7 +974,8 @@ permci_cont <- function(f, outcomename, trtname, runit, trtunit = NULL, strat = 
 
   # initial values for CI search
   if (missing(init)) {
-    inits <- getInits_cont(f, trtname, runit, trtunit, strat, data, alpha, obs1)
+    inits <- getInits_cont(f, trtname, runit, trtunit, strat, data, alpha, obs1,
+                           restrictedDf, restrictedDfType)
   } else {
     if (!is.null(call$initmethod))
       warning(paste0("user-supplied init overrides initmethod = '", initmethod, "'"))
@@ -995,7 +1001,8 @@ permci_cont <- function(f, outcomename, trtname, runit, trtunit = NULL, strat = 
           data.trans[trt_index, outcomename] <- data.trans[trt_index, outcomename] - low
 
         # permute based on runit
-        data.tmp <- permute(data.trans, trtname, runit, trtunit, strat) # permuted data
+        data.tmp <- permute(data.trans, trtname, runit, trtunit, strat,
+                            restrictedDf, restrictedDfType) # permuted data
         t <- f(data.tmp) # return tx effect estimate
         tstar <- f(data.trans) # tx effect estimate from original permutation
 
@@ -1025,7 +1032,8 @@ permci_cont <- function(f, outcomename, trtname, runit, trtunit = NULL, strat = 
           data.trans[trt_index, outcomename] <- data.trans[trt_index, outcomename] - up
 
         # permute based on runit
-        data.tmp <- permute(data.trans, trtname, runit, trtunit, strat) # permuted data
+        data.tmp <- permute(data.trans, trtname, runit, trtunit, strat,
+                            restrictedDf, restrictedDfType) # permuted data
         t <- f(data.tmp) # return tx effect estimate
         tstar <- f(data.trans) # tx effect estimate from original permutation
 

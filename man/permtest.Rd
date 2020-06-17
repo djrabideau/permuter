@@ -5,7 +5,8 @@
 \title{Randomization test}
 \usage{
 permtest(f, trtname, runit, trtunit = NULL, strat = NULL, data,
-  nperm = 1000, ncores = 1, seed, quietly = T)
+  nperm = 1000, ncores = 1, seed, quietly = T, restrictedDf = NULL,
+  restrictedDfType = NULL)
 }
 \arguments{
 \item{f}{fitted model object or function. If \code{f} is a fitted model
@@ -43,6 +44,16 @@ runs in parallel.}
 
 \item{quietly}{logical; if TRUE (and if ncores == 1), status updates will be
 printed to Console otherwise, suppress updates.}
+
+\item{restrictedDf}{an optional matrix of restricted randomizations from
+which to choose for randomization test/CI. Rows correspond to randomization
+units (e.g. individuals, clusters), first column contains randomization unit
+labels corresponding with data, other columns correspond to different possible
+randomization patterns. Entries depend on "restrictedDfType", see below.}
+
+\item{restrictedDfType}{type of restricted randomization matrix provided.
+If "parallel", entries indicate control (0) or intervention (1). If "SWT",
+entries indicate period at which clusters crossover.}
 }
 \description{
 Carry out a randomization test for a treatment effect using a fitted model

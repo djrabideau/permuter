@@ -5,7 +5,7 @@
 \title{Get initial values for CI search}
 \usage{
 getInits(model, trtname, runit, trtunit, strat, data, initmethod, alpha,
-  obs1)
+  obs1, restrictedDf, restrictedDfType)
 }
 \description{
 \code{getinits} returns initial values for CI search, \code{c(lower, upper)}

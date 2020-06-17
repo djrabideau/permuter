@@ -250,7 +250,8 @@ permtest_coxph <- function(formula, trtname, runit, trtunit = NULL, strat = NULL
 #' printed to Console otherwise, suppress updates.
 #' @export
 permtest <- function(f, trtname, runit, trtunit = NULL, strat = NULL, data,
-                     nperm = 1000, ncores = 1, seed, quietly = T) {
+                     nperm = 1000, ncores = 1, seed, quietly = T,
+                     restrictedDf = NULL, restrictedDfType = NULL) {
   call <- match.call()
   if (ncores > 1) {
     doParallel::registerDoParallel(cores = ncores)
@@ -272,7 +273,8 @@ permtest <- function(f, trtname, runit, trtunit = NULL, strat = NULL, data,
 
   # permute based on runit
   perm.stat <- foreach::foreach(i = 2:nperm, .combine = c) %dorng% {
-    data.tmp <- permute(data, trtname, runit, trtunit, strat) # permuted data
+    data.tmp <- permute(data, trtname, runit, trtunit, strat,
+                        restrictedDf, restrictedDfType) # permuted data
     if (ncores == 1 & !quietly & i %in% seq(ceiling(nperm / 10), nperm,
                                             ceiling(nperm / 10)))
       cat(i, "of", nperm, "permutations complete\n")

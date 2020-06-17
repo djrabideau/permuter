@@ -31,13 +31,22 @@
 #' NULL (default), trtunit is assumed equivalent to runit.
 #' @param strat an optional character string specifying the name of the variable
 #' in \code{data} upon which randomization was stratified
+#' @param restrictedDf an optional matrix of restricted randomizations from
+#' which to choose for randomization test/CI. Rows correspond to randomization
+#' units (e.g. individuals, clusters), first column contains randomization unit
+#' labels corresponding with data, other columns correspond to different possible
+#' randomization patterns. Entries depend on "restrictedDfType", see below.
+#' @param restrictedDfType type of restricted randomization matrix provided.
+#' If "parallel", entries indicate control (0) or intervention (1). If "SWT",
+#' entries indicate period at which clusters crossover.
 #' @export
-permute <- function(data, trtname, runit, trtunit = NULL, strat = NULL) {
+permute <- function(data, trtname, runit, trtunit = NULL, strat = NULL,
+                    restrictedDf = NULL, restrictedDfType = NULL) {
   if (is.null(trtunit))
     trtunit <- runit
   if (!(runit %in% trtunit))
     stop('runit must be a subset of trtunit')
-  if (is.null(strat)) {
+  if (is.null(strat) & is.null(restrictedDf)) {
     # permute
     design <- unique(data[, c(trtunit, trtname)])
     if (nrow(as.matrix(unique(data[, c(trtunit)]))) != nrow(design))
@@ -46,7 +55,7 @@ permute <- function(data, trtname, runit, trtunit = NULL, strat = NULL) {
     ldesign <- split(pdesign, pdesign[, runit])
     shuffled_trt_list <- sample(lapply(ldesign, function(x) x[, trtname]))
     pdesign[, trtname] <- unlist(shuffled_trt_list)
-  } else {
+  } else if (is.null(restrictedDf)) {
     # stratified permute
     design <- unique(data[, c(trtunit, strat, trtname)])
     if (nrow(as.matrix(unique(data[, c(trtunit)]))) != nrow(design))
@@ -59,6 +68,30 @@ permute <- function(data, trtname, runit, trtunit = NULL, strat = NULL) {
       pdesign[pdesign[, strat] == s, trtname] <- unlist(shuffled_trt_list_tmp)
     }
     pdesign <- pdesign[, - which(names(pdesign) == strat)]
+  } else if (restrictedDfType == 'parallel') {
+    stop('restrictedDfType not implemented yet')
+  } else if (restrictedDfType == 'SWT') {
+    # choose one of the restricted randomizations
+    dimRestr <- dim(restrictedDf)
+    if (dimRestr[1] != length(unique(ds[, runit])))
+      stop('ncol(restrictedDf) != length(unique(runit))')
+    if (max(rand1000[, -1]) > max(data[, trtunit[2]]))
+      stop('restrictedDf has entries that do not align with data runit values')
+    col <- sample(2:ncol(restrictedDf), 1)
+    rand <- restrictedDf[, c(1, col)]
+    names(rand) <- c(runit, 'crossoverPeriod')
+
+    # design df
+    design <- unique(data[, c(trtunit, trtname)])
+    if (nrow(as.matrix(unique(data[, c(trtunit)]))) != nrow(design))
+      stop('each unique trtunit must correspond to only one value of trtname')
+    design2 <- merge(design, rand, all.x = T)
+
+    # replace actual trt with chosen restricted values
+    pdesign <- design
+    pdesign[, trtname] <- as.numeric(design2[, trtunit[2]] >= design2[, 'crossoverPeriod'])
+  } else {
+    stop('restrictedDfType not accepted')
   }
 
   data <- merge(data[, -which(names(data) == trtname)], pdesign, by = trtunit)
@@ -153,7 +186,7 @@ update_rm <- function(method, init, thetahat, t, tstar, alpha, i, m, k, Ps,
 #'
 #' This is a general utility function used within \code{permci}.
 #'
-getInits <- function(model, trtname, runit, trtunit, strat, data, initmethod, alpha, obs1) {
+getInits <- function(model, trtname, runit, trtunit, strat, data, initmethod, alpha, obs1, restrictedDf, restrictedDfType) {
   if (initmethod == 'asymp') {
     if (sum(c('glm', 'survreg', 'coxph') %in% class(model)) > 0) {
       Vcov <- vcov(model, useScale = FALSE)
@@ -174,7 +207,8 @@ getInits <- function(model, trtname, runit, trtunit, strat, data, initmethod, al
       nperm_init <- ceiling((4 - alpha) / alpha)
       data$obs1 <- obs1
       perm.stat <- foreach::foreach(i = 1:nperm_init, .combine = c) %dorng% {
-        data.tmp <- permute(data, trtname, runit, trtunit, strat) # permuted data
+        data.tmp <- permute(data, trtname, runit, trtunit, strat,
+                            restrictedDf, restrictedDfType) # permuted data
         model.tmp <- update(model, formula. = as.formula(paste0("~ . + offset(", trtname, ".obs * obs1)")), data = data.tmp) # fit
         as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
       }
@@ -204,13 +238,14 @@ getInits <- function(model, trtname, runit, trtunit, strat, data, initmethod, al
 #'
 #' This is a general utility function used within \code{permci_cont}.
 #'
-getInits_cont <- function(f, trtname, runit, trtunit, strat, data, alpha, obs1) {
+getInits_cont <- function(f, trtname, runit, trtunit, strat, data, alpha, obs1, restrictedDf, restrictedDfType) {
     # initialize using quick randomization test of H0: theta = obs1,
     # as recommended in Garthwaite (1996)
     nperm_init <- ceiling((4 - alpha) / alpha)
     data$obs1 <- obs1
     perm.stat <- foreach::foreach(i = 1:nperm_init, .combine = c) %dorng% {
-      data.tmp <- permute(data, trtname, runit, trtunit, strat) # permuted data
+      data.tmp <- permute(data, trtname, runit, trtunit, strat,
+                          restrictedDf, restrictedDfType) # permuted data
       f(data.tmp)
     }
     t1 <- sort(perm.stat)[2] # 2nd to smallest

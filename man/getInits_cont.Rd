@@ -4,7 +4,8 @@
 \alias{getInits_cont}
 \title{Get initial values for CI search (continuous outcome)}
 \usage{
-getInits_cont(f, trtname, runit, trtunit, strat, data, alpha, obs1)
+getInits_cont(f, trtname, runit, trtunit, strat, data, alpha, obs1,
+  restrictedDf, restrictedDfType)
 }
 \description{
 \code{getinits} returns initial values for CI search, \code{c(lower, upper)}

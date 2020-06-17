@@ -6,7 +6,8 @@
 \usage{
 permci_cont(f, outcomename, trtname, runit, trtunit = NULL,
   strat = NULL, data, nperm = 1000, nburn = 0, level = 0.95, init,
-  ncores = 1, seed, quietly = F, method = "G", m, k, Ps = NULL, n)
+  ncores = 1, seed, quietly = F, method = "G", m, k, Ps = NULL, n,
+  restrictedDf = NULL, restrictedDfType = NULL)
 }
 \arguments{
 \item{f}{a function that must be defined such that when
