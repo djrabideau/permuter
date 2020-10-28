@@ -75,8 +75,10 @@ permute <- function(data, trtname, runit, trtunit = NULL, strat = NULL,
     dimRestr <- dim(restrictedDf)
     if (dimRestr[1] != length(unique(ds[, runit])))
       stop('ncol(restrictedDf) != length(unique(runit))')
-    if (max(rand1000[, -1]) > max(data[, trtunit[2]]))
-      stop('restrictedDf has entries that do not align with data runit values')
+    # periodsDf <- unique(as.vector(as.matrix(restrictedDf[, -1])))
+    # periodsDs <- unique(data[, trtunit[2]])
+    # if (sum(periodsDs %in% periodsDf) < length(periodsDs))
+    #   stop('restrictedDf has entries that do not align with data runit values')
     col <- sample(2:ncol(restrictedDf), 1)
     rand <- restrictedDf[, c(1, col)]
     names(rand) <- c(runit, 'crossoverPeriod')
