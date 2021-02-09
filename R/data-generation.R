@@ -118,9 +118,10 @@ gendata_crt <- function(family = gaussian, nclus, size, theta = 0,
 #'
 #' This function generates data from a SW-CRT using a generalized linear mixed
 #' model, a GLMM, with a fixed intercept, fixed treatment effect, fixed period
-#' effect, random cluster effects, and random cluster-period effects.
+#' effect, random cluster effects, random cluster-period effects, and random
+#' cluster-treatment effects.
 #' The data will be sorted increasing by cluster, then period, then subject.The
-#' GLMM is \deqn{g(E[Y_{kij}]) = \mu + \alpha_k + \beta_j + \eta_{jk} + \theta * X_{jk}}
+#' GLMM is \deqn{g(E[Y_{kij}]) = \mu + \alpha_k + \beta_j + \eta_{jk} + \theta * X_{jk} + \omega_k * X_{jk}}
 #' where \eqn{X_{kj}} is the treatment indicator for the \eqn{k}th cluster in
 #' the \eqn{j}th time period (step).
 #' @param family a description of the error distribution and link function to
@@ -148,8 +149,9 @@ gendata_crt <- function(family = gaussian, nclus, size, theta = 0,
 #' @param mu intercept in GLMM
 #' @param beta vector of fixed period effects (length = nstep + 1)
 #' @param nu SD of random cluster-period effects
+#' @param phi SD of random cluster-treatment effects
 #' @param rho between-cluster correlation (assuming exchangeable covariance); if
-#'     non-zero, then there is corrrelation between clusters.
+#'     non-zero, then there is correlation between clusters.
 #' @param sd SD of residual error (only applies if family = gaussian)
 #' @param redist assumed distribution for random cluster effects (currently supports
 #'     'normal' and 'lognormal')
@@ -173,7 +175,7 @@ gendata_crt <- function(family = gaussian, nclus, size, theta = 0,
 #' # 6       1      1          6                     1.1.6            1.1   0 -1.7543536
 #' @export
 gendata_swcrt <- function(family = gaussian, nclus, size, sizeFixed = F, nstep, theta = 0, sigma, Sigma, mu,
-                     beta, nu = 0, rho = 0, sd = 1, redist = 'normal') {
+                     beta, nu = 0, phi = 0, rho = 0, sd = 1, redist = 'normal') {
   # check inputs
   if (nclus %% nstep != 0)
     stop('nclus must be a multiple of nstep')
@@ -237,6 +239,10 @@ gendata_swcrt <- function(family = gaussian, nclus, size, sizeFixed = F, nstep, 
   eta <- rnorm(nclus * nperiod, 0, nu)
   myeta <- rep(eta, unlist(nis))
 
+  # random cluster-treatment effects
+  omega <- rnorm(nclus, 0, phi)
+  myomega <- rep(omega, ntotk)
+
   # create an individual id formatted as cluster#.period#.individual#
   cluster <- rep(1:nclus, ntotk)
   period <- unlist(lapply(nis, function(x) rep(1:nperiod, x)))
@@ -268,7 +274,7 @@ gendata_swcrt <- function(family = gaussian, nclus, size, sizeFixed = F, nstep, 
         print(family)
         stop("'family' not recognized")
   }
-  y.mean <- family$linkinv(mymu + myalpha + mybeta + myeta + trt * theta)
+  y.mean <- family$linkinv(mymu + myalpha + mybeta + myeta + trt * theta + trt * myomega)
   if (family$family=='gaussian') {
     y <- rnorm(ntot, y.mean, sd)
   } else if (family$family=='binomial') {
@@ -286,7 +292,7 @@ gendata_swcrt <- function(family = gaussian, nclus, size, sizeFixed = F, nstep, 
 
 #' @export
 gendata_swcrtStrat <- function(family = gaussian, nclus, size, nstep, theta = 0, sigma, Sigma, mu,
-                               beta, nu = 0, rho = 0, sd = 1, redist = 'normal',
+                               beta, nu = 0, phi = 0, rho = 0, sd = 1, redist = 'normal',
                                gamma = 0) {
   # check inputs
   if (nclus %% nstep != 0)
@@ -347,6 +353,10 @@ gendata_swcrtStrat <- function(family = gaussian, nclus, size, nstep, theta = 0,
   eta <- rnorm(nclus * nperiod, 0, nu)
   myeta <- rep(eta, unlist(nis))
 
+  # random cluster-treatment effects
+  omega <- rnorm(nclus, 0, phi)
+  myomega <- rep(omega, ntotk)
+
   # create an individual id formatted as cluster#.period#.individual#
   cluster <- rep(1:nclus, ntotk)
   period <- unlist(lapply(nis, function(x) rep(1:nperiod, x)))
@@ -381,7 +391,7 @@ gendata_swcrtStrat <- function(family = gaussian, nclus, size, nstep, theta = 0,
     print(family)
     stop("'family' not recognized")
   }
-  y.mean <- family$linkinv(mymu + myalpha + mybeta + myeta + trt * theta + strat * gamma)
+  y.mean <- family$linkinv(mymu + myalpha + mybeta + myeta + trt * theta + trt * myomega + strat * gamma)
   if (family$family=='gaussian') {
     y <- rnorm(ntot, y.mean, sd)
   } else if (family$family=='binomial') {
