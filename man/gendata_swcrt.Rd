@@ -5,8 +5,8 @@
 \title{Generate data from a stepped wedge cluster randomized trial (SW-CRT)}
 \usage{
 gendata_swcrt(family = gaussian, nclus, size, sizeFixed = F, nstep,
-  theta = 0, sigma, Sigma, mu, beta, nu = 0, rho = 0, sd = 1,
-  redist = "normal")
+  theta = 0, sigma, Sigma, mu, beta, nu = 0, phi = 0, rho = 0,
+  sd = 1, redist = "normal")
 }
 \arguments{
 \item{family}{a description of the error distribution and link function to
@@ -45,8 +45,10 @@ normal random cluster effects}
 
 \item{nu}{SD of random cluster-period effects}
 
+\item{phi}{SD of random cluster-treatment effects}
+
 \item{rho}{between-cluster correlation (assuming exchangeable covariance); if
-non-zero, then there is corrrelation between clusters.}
+non-zero, then there is correlation between clusters.}
 
 \item{sd}{SD of residual error (only applies if family = gaussian)}
 
@@ -59,9 +61,10 @@ non-zero, then there is corrrelation between clusters.}
 \details{
 This function generates data from a SW-CRT using a generalized linear mixed
 model, a GLMM, with a fixed intercept, fixed treatment effect, fixed period
-effect, random cluster effects, and random cluster-period effects.
+effect, random cluster effects, random cluster-period effects, and random
+cluster-treatment effects.
 The data will be sorted increasing by cluster, then period, then subject.The
-GLMM is \deqn{g(E[Y_{kij}]) = \mu + \alpha_k + \beta_j + \eta_{jk} + \theta * X_{jk}}
+GLMM is \deqn{g(E[Y_{kij}]) = \mu + \alpha_k + \beta_j + \eta_{jk} + \theta * X_{jk} + \omega_k * X_{jk}}
 where \eqn{X_{kj}} is the treatment indicator for the \eqn{k}th cluster in
 the \eqn{j}th time period (step).
 }
