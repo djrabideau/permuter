@@ -34,6 +34,10 @@
 #' @param data a data frame containing the variables in the model. This argument
 #' is passed to the corresponding regression function, e.g.
 #' \code{\link[stats]{glm}} (see Details).
+#' @param alternative a character string specifying the alternative hypothesis,
+#' must be one of "two-sided" (default), "greater", or "less".
+#' @param theta a number indicating the null treatment effect value of interest
+#' for the randomization test
 #' @param nperm number of permutations for randomization test
 #' @param ncores number of cores to use for computation. If ncores > 1, permtest
 #' runs in parallel.
@@ -69,8 +73,13 @@
 #' plot(test) # visualize Monte Carlo randomization distribution
 #' @export
 permtest_glm <- function(formula, trtname, runit, strat = NULL,
-                         family = gaussian, data, nperm = 1000, ncores = 1,
+                         family = gaussian, data,
+                         alternative = 'two-sided', theta = 0,
+                         nperm = 1000, ncores = 1,
                          seed, quietly = T) {
+  if (!(alternative %in% c('two-sided', 'greater', 'less')))
+    stop("'alternative' must be one of c('two-sided', 'greater', 'less')")
+
   call <- match.call()
   if (ncores > 1) {
     doParallel::registerDoParallel(cores = ncores)
@@ -83,6 +92,9 @@ permtest_glm <- function(formula, trtname, runit, strat = NULL,
     seed <- NA
   }
 
+  # add null value to data set
+  data$null <- theta
+
   # fit glm
   m1 <- glm(formula = formula, family = family, data = data)
   obs1 <- as.numeric(coef(m1)[trtname])
@@ -90,7 +102,8 @@ permtest_glm <- function(formula, trtname, runit, strat = NULL,
   # permute based on runit
   perm.stat <- foreach::foreach(i = 2:nperm, .combine = c) %dorng% {
     data.tmp <- permute(data, trtname, runit, strat) # permuted data
-    model.tmp <- glm(formula = formula, family = family, data = data.tmp) # fit
+    model.tmp <- update(m1, formula. = as.formula(paste0("~ . + offset(", trtname, " * null)")), data = data.tmp) # fit
+
     if (ncores == 1 & !quietly & i %in% seq(ceiling(nperm / 10), nperm,
                                             ceiling(nperm / 10)))
       cat(i, "of", nperm, "permutations complete\n")
@@ -100,7 +113,14 @@ permtest_glm <- function(formula, trtname, runit, strat = NULL,
 
   comb.stat1 <- c(obs1, perm.stat)
 
-  pval.perm <- mean(abs(comb.stat1) >= abs(obs1)) # prop more extreme than obs
+  # prop more extreme than obs
+  if (alternative == 'two-sided') {
+    pval.perm <- mean(abs(comb.stat1) >= abs(obs1))
+  } else if (alternative == 'less') {
+    pval.perm <- mean(comb.stat1 < obs1)
+  } else if (alternative == 'greater') {
+    pval.perm <- mean(comb.stat1 > obs1)
+  }
 
   out <- list(coef = obs1,
               pval = pval.perm,
@@ -121,8 +141,12 @@ permtest_glm <- function(formula, trtname, runit, strat = NULL,
 #' @rdname permtest_glm
 #' @export
 permtest_survreg <- function(formula, trtname, runit, strat = NULL, data,
+                             alternative = 'two-sided', theta = 0,
                              dist = "weibull", nperm = 1000, ncores = 1,
                              seed, quietly = T) {
+  if (!(alternative %in% c('two-sided', 'greater', 'less')))
+    stop("'alternative' must be one of c('two-sided', 'greater', 'less')")
+
   call <- match.call()
   if (ncores > 1) {
     doParallel::registerDoParallel(cores = ncores)
@@ -135,6 +159,9 @@ permtest_survreg <- function(formula, trtname, runit, strat = NULL, data,
     seed <- NA
   }
 
+  # add null value to data set
+  data$null <- theta
+
   # fit
   m1 <- survival::survreg(formula = formula, data = data, dist = dist)
   obs1 <- as.numeric(coef(m1)[trtname])
@@ -142,8 +169,7 @@ permtest_survreg <- function(formula, trtname, runit, strat = NULL, data,
   # permute based on runit
   perm.stat <- foreach::foreach(i = 2:nperm, .combine = c) %dorng% {
     data.tmp <- permute(data, trtname, runit, strat) # permuted data
-    model.tmp <- survival::survreg(formula = formula, data = data.tmp,
-                                   dist = dist) # fit
+    model.tmp <- update(m1, formula. = as.formula(paste0("~ . + offset(", trtname, " * null)")), data = data.tmp) # fit
 
     if (ncores == 1 & !quietly & i %in% seq(ceiling(nperm / 10), nperm,
                                             ceiling(nperm / 10)))
@@ -154,7 +180,14 @@ permtest_survreg <- function(formula, trtname, runit, strat = NULL, data,
 
   comb.stat1 <- c(obs1, perm.stat)
 
-  pval.perm <- mean(abs(comb.stat1) >= abs(obs1)) # prop more extreme than obs
+  # prop more extreme than obs
+  if (alternative == 'two-sided') {
+    pval.perm <- mean(abs(comb.stat1) >= abs(obs1))
+  } else if (alternative == 'less') {
+    pval.perm <- mean(comb.stat1 < obs1)
+  } else if (alternative == 'greater') {
+    pval.perm <- mean(comb.stat1 > obs1)
+  }
 
   out <- list(coef = obs1,
               pval = pval.perm,
@@ -175,7 +208,11 @@ permtest_survreg <- function(formula, trtname, runit, strat = NULL, data,
 #' @rdname permtest_glm
 #' @export
 permtest_coxph <- function(formula, trtname, runit, strat = NULL, data,
-                             nperm = 1000, ncores = 1, seed, quietly = T) {
+                           alternative = 'two-sided', theta = 0,
+                           nperm = 1000, ncores = 1, seed, quietly = T) {
+  if (!(alternative %in% c('two-sided', 'greater', 'less')))
+    stop("'alternative' must be one of c('two-sided', 'greater', 'less')")
+
   call <- match.call()
   if (ncores > 1) {
     doParallel::registerDoParallel(cores = ncores)
@@ -188,6 +225,9 @@ permtest_coxph <- function(formula, trtname, runit, strat = NULL, data,
     seed <- NA
   }
 
+  # add null value to data set
+  data$null <- theta
+
   # fit
   m1 <- survival::coxph(formula = formula, data = data)
   obs1 <- as.numeric(coef(m1)[trtname])
@@ -195,7 +235,7 @@ permtest_coxph <- function(formula, trtname, runit, strat = NULL, data,
   # permute based on runit
   perm.stat <- foreach::foreach(i = 2:nperm, .combine = c) %dorng% {
     data.tmp <- permute(data, trtname, runit, strat) # permuted data
-    model.tmp <- survival::coxph(formula = formula, data = data.tmp) # fit
+    model.tmp <- update(m1, formula. = as.formula(paste0("~ . + offset(", trtname, " * null)")), data = data.tmp) # fit
 
     if (ncores == 1 & !quietly & i %in% seq(ceiling(nperm / 10), nperm,
                                             ceiling(nperm / 10)))
@@ -206,7 +246,14 @@ permtest_coxph <- function(formula, trtname, runit, strat = NULL, data,
 
   comb.stat1 <- c(obs1, perm.stat)
 
-  pval.perm <- mean(abs(comb.stat1) >= abs(obs1)) # prop more extreme than obs
+  # prop more extreme than obs
+  if (alternative == 'two-sided') {
+    pval.perm <- mean(abs(comb.stat1) >= abs(obs1))
+  } else if (alternative == 'less') {
+    pval.perm <- mean(comb.stat1 < obs1)
+  } else if (alternative == 'greater') {
+    pval.perm <- mean(comb.stat1 > obs1)
+  }
 
   out <- list(coef = obs1,
               pval = pval.perm,
@@ -240,6 +287,10 @@ permtest_coxph <- function(formula, trtname, runit, strat = NULL, data,
 #' @inheritParams permute
 #' @param data a data frame containing the variables necessary for the function
 #' \code{f}. This argument is passed to \code{f}.
+#' @param alternative a character string specifying the alternative hypothesis,
+#' must be one of "two-sided" (default), "greater", or "less".
+#' @param theta a number indicating the null treatment effect value of interest
+#' for the randomization test
 #' @param nperm number of permutations for randomization test
 #' @param ncores number of cores to use for computation. If ncores > 1, permtest
 #' runs in parallel.
@@ -250,7 +301,11 @@ permtest_coxph <- function(formula, trtname, runit, strat = NULL, data,
 #' printed to Console otherwise, suppress updates.
 #' @export
 permtest <- function(f, trtname, runit, strat = NULL, data,
+                     alternative = 'two-sided', theta = 0,
                      nperm = 1000, ncores = 1, seed, quietly = T) {
+  if (!(alternative %in% c('two-sided', 'greater', 'less')))
+    stop("'alternative' must be one of c('two-sided', 'greater', 'less')")
+
   call <- match.call()
   if (ncores > 1) {
     doParallel::registerDoParallel(cores = ncores)
@@ -262,6 +317,9 @@ permtest <- function(f, trtname, runit, strat = NULL, data,
   } else {
     seed <- NA
   }
+
+  # add null value to data set
+  data$null <- theta
 
   # calculate test statistic for obs data
   if (is.function(f)) {
@@ -278,16 +336,24 @@ permtest <- function(f, trtname, runit, strat = NULL, data,
       cat(i, "of", nperm, "permutations complete\n")
 
     if (is.function(f)) {
+      if (theta != 0)
+        stop("Non-zero null only supported when 'f' is a fitted model object")
       f(data.tmp) # return test statistic for perm data
     } else {
-      model.tmp <- update(f, data = data.tmp) # fit
+      model.tmp <- update(f, formula. = as.formula(paste0("~ . + offset(", trtname, " * null)")), data = data.tmp) # fit
       as.numeric(coef(model.tmp)[trtname]) # return tx effect estimate
     }
   }
 
   comb.stat1 <- c(obs1, perm.stat)
 
-  pval.perm <- mean(abs(comb.stat1) >= abs(obs1)) # prop more extreme than obs
+  if (alternative == 'two-sided') {
+    pval.perm <- mean(abs(comb.stat1) >= abs(obs1)) # prop more extreme than obs
+  } else if (alternative == 'less') {
+    pval.perm <- mean(comb.stat1 < obs1)
+  } else if (alternative == 'greater') {
+    pval.perm <- mean(comb.stat1 > obs1)
+  }
 
   out <- list(coef = obs1,
               pval = pval.perm,

@@ -83,4 +83,26 @@ test_that("permtest with user defined function works as it should", {
   expect_true(identical(tmp7$permCoefs, tmp8$permCoefs))
 })
 
+test_that("permtest with non-zero null works as it should", {
+  ds <- gendata_crt(nclus = c(5, 5), size = c(10, 10), theta = 0, sigma = 1,
+                    mu = 0, sd = 1)
+  # permtest
+  m1 <- glm(y ~ trt, data = ds)
+  expect_no_condition(  tmp9 <- permtest(m1, trtname = 'trt', runit = 'clusid', data = ds,
+                                         alternative = 'less', theta = 1,
+                                         nperm = 10, ncores = 1, seed = 444, quietly = T))
+  expect_error(  tmp10 <- permtest({function(x) x}, trtname = 'trt', runit = 'clusid', data = ds,
+                                         alternative = 'less', theta = 1,
+                                         nperm = 10, ncores = 1, seed = 444, quietly = T))
+})
+
+test_that("permtest_glm with non-zero null works as it should", {
+  ds <- gendata_crt(nclus = c(5, 5), size = c(10, 10), theta = 0, sigma = 1,
+                    mu = 0, sd = 1)
+  # permtest
+  expect_no_condition(  tmp11 <- permtest_glm(y ~ trt, trtname = 'trt', runit = 'clusid', data = ds,
+                                         alternative = 'less', theta = 1,
+                                         nperm = 10, ncores = 1, seed = 444, quietly = T))
+})
+
 # should add other permtest_xxx tests, but first need dummy data
